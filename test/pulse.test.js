@@ -573,3 +573,44 @@ test('dashboard: cost per project next to its tokens, a dash where none was reco
   const projects = out.slice(out.indexOf('Projects, last 7 days'), out.indexOf('Models, last 7 days')).split('\n');
   for (const row of projects) assert.ok([...row].length <= 100, row);
 });
+
+test('recap: last Monday-to-Sunday week against the week before', () => {
+  const { home, run, js } = sandbox();
+  // "Last week" is always the previous complete Monday-to-Sunday, whatever today is.
+  const weeks = js(`
+    const R = require(${JSON.stringify(path.join(SCRIPTS, 'recap.js'))});
+    return [0, 1, 2, 3, 4, 5, 6].map((i) => { const t = new Date(2026, 10, 16 + i, 9).getTime(); return R.weekOf(t, 1); });`);
+  for (const w of weeks) assert.deepStrictEqual(w, ['2026-11-09', '2026-11-10', '2026-11-11', '2026-11-12', '2026-11-13', '2026-11-14', '2026-11-15']);
+
+  assert.match(run('pulse.js', ['recap']), /^No Claude Code activity last week \(Mon .* - Sun .*\)\.$/m);
+
+  // Two replies on last week's Tuesday, one on its Thursday, one the week before.
+  const last = js(`const R = require(${JSON.stringify(path.join(SCRIPTS, 'recap.js'))}); return [R.weekOf(Date.now(), 1), R.weekOf(Date.now(), 2)];`);
+  const dir = path.join(home, '.claude', 'projects', 'p');
+  fs.mkdirSync(dir, { recursive: true });
+  const usage = { input_tokens: 0, output_tokens: 100, cache_read_input_tokens: 900, cache_creation_input_tokens: 0 };
+  const at = (day) => `${day}T12:00:00`;
+  const line = (id, day, cwd) => JSON.stringify({ type: 'assistant', timestamp: new Date(at(day)).toISOString(), cwd, message: { id, model: 'claude-opus-5-5', usage } });
+  const shop = path.join(home, 'work', 'shop');
+  fs.writeFileSync(path.join(dir, 'a.jsonl'), [line('a1', last[0][1], shop), line('a2', last[0][1], shop), line('a3', last[0][3], shop)].join('\n') + '\n');
+  fs.writeFileSync(path.join(dir, 'b.jsonl'), line('b1', last[1][2], path.join(home, 'work', 'blog')) + '\n');
+  // Cost recorded from last week's Thursday only: tracking started partway through.
+  fs.mkdirSync(path.join(home, '.claude', 'pulse', 'sessions'), { recursive: true });
+  fs.writeFileSync(path.join(home, '.claude', 'pulse', 'sessions', 's.json'), JSON.stringify({ sid: 's', project: shop, days: { [last[0][3]]: { spent: 7.25 } } }));
+
+  const out = run('pulse.js', ['recap']);
+  assert.match(out, /^Last week, Mon .* - Sun /m);
+  assert.match(out, /^ {2}Tokens +3k +\+200% vs the week before$/m);
+  assert.match(out, /^ {2}Replies +3 +\+200%$/m);
+  assert.match(out, /^ {2}Cost +\$7\.25 \(tracked from [A-Z][a-z]{2} \d+\)$/m);
+  assert.match(out, /^ {2}Active days +2 of 7 +\+100%$/m);
+  assert.match(out, /^ {2}Busiest day +Tue [A-Z][a-z]{2} \d+ · 2k tokens$/m);
+  assert.match(out, /^ {2}Top project +shop · 100% of tokens$/m);
+  assert.match(out, /^ {2}Top model +Opus 5\.5 · 100% of replies$/m);
+
+  // The dashboard's line agrees with the recap, and fits narrow dashboards.
+  const weekLine = (width) => strip(js(`return require(${JSON.stringify(path.join(SCRIPTS, 'dash.js'))}).render({ width: ${width} });`)).split('\n').find((r) => r.includes('Last week:'));
+  assert.match(weekLine(130), /^ {2}Last week: 3k tokens · 3 replies · \$7\.25 · 2 active days \(\+200% vs the week before\) {2}\(more: \/usage-pulse:recap\)$/);
+  assert.match(weekLine(100), /^ {2}Last week: 3k tokens · 3 replies · \$7\.25 · 2 active days \(\+200% vs the week before\)$/);
+  assert.match(weekLine(70), /^ {2}Last week: 3k tokens · 3 replies · \$7\.25 · 2 active days$/);
+});

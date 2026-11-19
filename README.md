@@ -45,6 +45,7 @@ before, so `/usage-pulse:uninstall` can put it back.
 |---|---|
 | `/usage-pulse:setup` | Install the status line and spinner tips. |
 | `/usage-pulse:dashboard` | Print the full usage dashboard. |
+| `/usage-pulse:recap` | Last week at a glance (Monday to Sunday): tokens, replies, cost, active days, busiest day, top project and model, each compared with the week before. |
 | `/usage-pulse:live` | Keep the dashboard open next to Claude (also: `usage-pulse` in any terminal). |
 | `/usage-pulse:activity` | Open your activity page in the browser. |
 | `/usage-pulse:settings` | See every setting, or change one, like `/usage-pulse:settings colors red`. See [Settings](#settings). |
@@ -149,7 +150,8 @@ the activity grid to see that day's tokens and replies.
   tokens, active days, your current and longest streak, and your busiest day.
 - **Open sessions**: every Claude Code window active in the last 10 minutes, with its context
   and cost.
-- **Activity, last 14 days**: tokens and replies per day.
+- **Activity, last 14 days**: tokens and replies per day, and a "Last week" line with the headline
+  figures from `/usage-pulse:recap`.
 - **Projects** and **Models**: where your usage went this week, and how much input came from the
   cache. Each project also shows what it cost in the last 7 days and this month (a dash where no
   cost was recorded, such as before Usage Pulse was installed).

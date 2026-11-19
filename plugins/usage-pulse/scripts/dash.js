@@ -9,6 +9,7 @@
 const L = require('./lib');
 const S = require('./scan');
 const G = require('./grid');
+const R = require('./recap');
 const { paint } = L;
 
 const label = (s) => paint('gray', s);
@@ -151,6 +152,11 @@ function render({ width = 100, now = Date.now(), hits = null } = {}) {
       out.push(`  ${paint(d === today ? 'bold' : 'gray', dayLabel(d, today))} ${b} ${L.padVis(paint('white', L.fmtTokens(tok)), 6)} ${label(L.padVis(msgs, 14))} ${label(t.output ? `${L.fmtTokens(t.output)} written` : '')}`);
     });
     out.push(`  ${label('Tokens Claude read and wrote per day (mostly re-read context from the cache).')}`);
+    // Last week's headline, with a pointer to the full recap when there's room.
+    const recap = R.weekRecap(now, { usage, sessions });
+    const lastWeek = R.headline(recap, width - 13);
+    const more = '  (more: /usage-pulse:recap)';
+    if (lastWeek) out.push(`  ${label('Last week:')} ${paint('white', lastWeek)}${13 + lastWeek.length + more.length <= width ? label(more) : ''}`);
 
     // ---- projects and models ----
     const week = S.totals(usage, L.lastDays(7, now));
