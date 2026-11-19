@@ -165,7 +165,21 @@ function windowInfo(key, w, now = Date.now()) {
   const used = Number(w.used_percentage) || 0;
   // Projected use at reset if the current rate holds.
   const projected = elapsed && elapsed > 0.05 ? used / elapsed : null;
-  return { used, left, elapsed, projected, fast: projected != null && projected > 100 };
+  const fast = projected != null && projected > 100;
+  // On a fast pace: when (epoch ms) the current rate reaches 100%, which is
+  // always before the reset.
+  const outAt = fast && used < 100 ? now + Math.min(((100 - used) * elapsed * len) / used, left) * 1000 : null;
+  return { used, left, elapsed, projected, fast, outAt };
+}
+
+// A clock time in the computer's usual format ("4:10pm" or "16:10"), with the
+// weekday in front when it isn't today ("Thu 4:10pm").
+function clockAt(t, now = Date.now()) {
+  const d = new Date(t);
+  const time = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+    .replace(/\s*([AaPp])\.?\s*[Mm]\.?$/, (_, a) => `${a.toLowerCase()}m`)
+    .replace(/\s/g, ' ');
+  return dayKey(t) === dayKey(now) ? time : `${d.toLocaleDateString('en-US', { weekday: 'short' })} ${time}`;
 }
 
 // ---------- session ledger ----------
@@ -265,7 +279,7 @@ module.exports = {
   readJSON, writeJSON, readStdin, loadConfig, saveConfig, sleep,
   paint, rgb, truecolor, to256, stripAnsi, visWidth, padVis, bar, gauge, heat, spark,
   fmtTokens, fmtUsd, fmtDur, dayKey, lastDays,
-  WINDOWS, windowInfo,
+  WINDOWS, windowInfo, clockAt,
   sessionFile, recordSession, loadSessions, spentOn, latestLimits,
   gitBranch,
 };

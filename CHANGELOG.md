@@ -11,6 +11,9 @@ All notable changes to Usage Pulse are listed here. The format follows
 - Alerts before you run out: a warning above the gauges when the 5-hour or weekly limit passes 80% or the context window passes 70% (with a nudge to `/compact`), plus one desktop notification each time. Thresholds and both parts can be changed in settings.
 - Daily and monthly budgets: "Today" in the status line shows how much of your daily budget is used, and the dashboard shows this month against your monthly budget, turning yellow and red as you get close.
 
+### Changed
+- "↑ fast pace" on a plan limit now says when you'd run out at the current rate, like "↑ out by 4:10pm" (with the day for the weekly limit), in the status line and the dashboard.
+
 ## 0.1.0 - 2026-11-19
 
 ### Added

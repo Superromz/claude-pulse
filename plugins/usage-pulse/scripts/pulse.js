@@ -26,7 +26,7 @@ const TIPS = [
   'Context above 60%? /compact frees room for the rest of the task',
   'Switching tasks? /clear starts fresh, so old context stops costing tokens',
   'A warm cache makes your next message cheaper and faster. The status line shows how long it lasts',
-  '"↑ fast pace" on a limit means you\'d reach it before it resets',
+  '"↑ out by 4:10pm" on a limit is when you\'d reach it at your current pace, before it resets',
   '/usage-pulse:dashboard shows where your usage went this week',
   '/usage-pulse:live keeps your usage dashboard open next to Claude',
   'Change the activity grid colors with /usage-pulse:colors',

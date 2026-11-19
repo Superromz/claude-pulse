@@ -166,7 +166,14 @@ test('fast pace warning when usage runs ahead of the clock', () => {
   const { run } = sandbox();
   // 80% used with 4 of 5 hours still left.
   const out = strip(run('statusline.js', [], JSON.stringify(payload({ rate_limits: { five_hour: { used_percentage: 80, resets_at: now() + 4 * 3600 } } }))));
-  assert.match(out, /↑ fast pace/);
+  // 80% in the first hour: the last 20% goes in 15 minutes.
+  const m = /↑ out by (\d{1,2}):(\d\d)(am|pm)?/.exec(out);
+  assert.ok(m, out);
+  let h = Number(m[1]) % (m[3] ? 12 : 24);
+  if (m[3] === 'pm') h += 12;
+  const at = new Date(); at.setHours(h, Number(m[2]), 0, 0);
+  const mins = ((at - Date.now()) / 60000 + 1440) % 1440;
+  assert.ok(mins >= 13 && mins <= 16, `${mins} minutes`);
 });
 
 test('daily spend: counts only new cost and survives a counter restart', () => {
@@ -321,7 +328,7 @@ test('plain mode: no block, line or arrow symbols anywhere', () => {
   // Only ASCII, the middle dot separator and the invisible row-start blank.
   assert.doesNotMatch(out.replace(/[·⠀\n]/g, ''), /[^\x20-\x7e]/);
   assert.match(out, /Context =+-+ +27%/);
-  assert.match(out, /\^ fast pace/);
+  assert.match(out, /\^ out by /);
   assert.match(out, /Mon {2}[.\-+*#]( [.\-+*#])+/);
   const dash = strip(run('dash.js'));
   assert.doesNotMatch(dash.replace(/[·\n]/g, ''), /[^\x20-\x7e]/);
@@ -490,4 +497,34 @@ test('budgets: "Today" against the daily budget, month to date on the dashboard'
   run('pulse.js', ['settings', 'budget-monthly', 'off']);
   assert.doesNotMatch(strip(run('dash.js')), /This month|monthly budget/);
   assert.match(run('pulse.js', ['settings', 'budget-daily', 'lots']), /Pick one of: off, an amount like 20/);
+});
+
+test('"out by" time: only on a fast pace, never after the reset', () => {
+  const { js, run } = sandbox();
+  const r = js(`
+    const n = Date.now(), s = n / 1000;
+    const at = (used, left) => L.windowInfo('five_hour', { used_percentage: used, resets_at: s + left }, n);
+    return {
+      fast: (at(80, 3 * 3600).outAt - n) / 60000,
+      slow: at(20, 3 * 3600).outAt,
+      full: at(100, 3 * 3600).outAt,
+      edge: (at(99.9, 600).outAt - n) / 1000 <= 600,
+      weekly: L.clockAt(n + 3 * 86400000, n),
+      today: L.clockAt(n + 60000, n),
+    };`);
+  assert.ok(Math.abs(r.fast - 30) < 0.01, String(r.fast));
+  assert.strictEqual(r.slow, null);
+  assert.strictEqual(r.full, null);
+  assert.strictEqual(r.edge, true);
+  assert.match(r.weekly, /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun) \d{1,2}:\d\d(am|pm)?$/);
+  assert.match(r.today, /^\d{1,2}:\d\d(am|pm)?$/);
+
+  // The dashboard says it too, and narrow terminals keep only the arrow.
+  const hot = JSON.stringify(payload({ rate_limits: { five_hour: { used_percentage: 80, resets_at: now() + 3 * 3600 } } }));
+  run('statusline.js', [], hot);
+  assert.match(strip(run('dash.js')), /At this pace you'll run out by \d{1,2}:\d\d(am|pm)?, before it resets/);
+  const narrow = strip(run('statusline.js', [], hot, { COLUMNS: '90' }));
+  assert.match(narrow, /↑/);
+  assert.doesNotMatch(narrow, /out by/);
+  for (const row of narrow.split('\n')) assert.ok([...row].length <= 84, row);
 });

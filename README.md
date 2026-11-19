@@ -84,7 +84,7 @@ On a wide terminal your activity grid sits on the right, with a lifetime summary
 | Item | What it means |
 |---|---|
 | Context | How full the conversation's context window is. |
-| 5-hour, Weekly | Your plan's usage windows (Pro and Max plans) and when each one resets. **↑ fast pace** means that at the current rate you'd reach the limit before it resets. |
+| 5-hour, Weekly | Your plan's usage windows (Pro and Max plans) and when each one resets. **↑ out by 4:10pm** means that at the current rate you'd reach the limit at that time, before it resets (on a narrow terminal, just **↑**). |
 | Model · effort | The model answering and the effort level it uses. |
 | This session | What this session has cost, how long it has been open, and the lines added and removed. |
 | Today | What all your Claude Code sessions have cost today, and how much of your daily budget that is if you set one (see [Budgets](#budgets)). |
