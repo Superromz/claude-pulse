@@ -1,40 +1,32 @@
 # CLAUDE.md
 
-Guidance for Claude Code and other agents working on Claude Arcade.
+Guidance for Claude Code and other agents working on Claude Pulse.
 
 ## What this is
 
-An open-source Claude Code plugin that turns the terminal into a game. You create a hero, and it
-levels up from your real Claude usage. Every prompt is a quest, every bug is a monster, and your
-agents fight beside you as companions. See `README.md` for the pitch and `docs/wiki/` for how
-everything works.
+A Claude Code plugin that shows your Claude usage in the status line (context, plan limits, cost,
+an activity grid) and in a dashboard. `README.md` describes what users see.
 
 ## Docs as we go (required)
 
 Every task that changes behavior updates the docs **in the same commit**:
 
-- `docs/wiki/*.md`: the page for that feature (add a page and link it from `Home.md` and
-  `_Sidebar.md` if the feature is new).
-- `CHANGELOG.md`: one line under `## Unreleased`, written for players, not implementation.
-- `README.md`: only if the feature changes the pitch, install, quick start or main controls.
-- `ROADMAP.md`: tick items off or add new ones.
+- `README.md`: what users see and do (status line items, dashboard sections, commands).
+- `CHANGELOG.md`: one line under `## Unreleased`, written for users, not implementation.
 
-Docs describe what players see and do. Keep implementation detail in `docs/wiki/Architecture.md`.
+Keep the wording plain and friendly: no jargon, no game terms.
 
 ## Code
 
-- Zero runtime dependencies. Node 18+. Game code lives in `plugins/claude-arcade/scripts/`; the
-  browser view in `plugins/claude-arcade/web/` (contract: `web/PROTOCOL.md`). After changing sprite
-  modules, run `node plugins/claude-arcade/web/client/sync.js` to rebuild the browser bundle.
-- Hooks must never block or break a Claude session: swallow errors, stay fast, and only print
-  output where the hook contract allows it.
-- XP must only come from real Claude usage (tools, tasks, tokens, kills during real tasks).
-  Practice waves, the shop and buffs never grant XP, because the leaderboard depends on it.
-- Every game frame line must be exactly the terminal width (`lib.visWidth`). The tests check this.
-- Run `npm test` before committing. For visual changes, render `game.js --snapshot` to a PNG
-  and look at it.
+- Zero runtime dependencies. Node 18+. Code lives in `plugins/claude-pulse/scripts/`.
+- The status line runs every second: keep it fast (no spawning git, no rescanning history in the
+  foreground) and never let it throw. Write to disk only when something changed.
+- Every status line row must fit inside `COLUMNS` minus the margin; Claude Code cuts the rest with "…".
+  The tests check this.
+- Run `npm test` before committing. For visual changes, render the output to a PNG with
+  `python tools/ansi2png.py out.txt out.png` and look at it.
 
 ## Commits
 
-- Short messages describing what changed for players.
+- Short messages describing what changed for users.
 - No Claude attribution trailers.

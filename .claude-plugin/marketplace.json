@@ -1,15 +1,15 @@
 {
-  "name": "claude-arcade",
+  "name": "claude-pulse",
   "owner": {
     "name": "Superromz"
   },
-  "description": "Claude Arcade: a game that lives in your Claude Code terminal.",
+  "description": "Claude Pulse: your Claude usage at a glance in Claude Code.",
   "plugins": [
     {
-      "name": "claude-arcade",
-      "source": "./plugins/claude-arcade",
-      "description": "Turn Claude Code into a game: create a hero that levels up from your real Claude usage. Monsters attack while Claude works, agents fight as companions, and every prompt is a quest.",
-      "version": "0.7.0"
+      "name": "claude-pulse",
+      "source": "./plugins/claude-pulse",
+      "description": "See your Claude usage at a glance: context window, 5-hour and weekly plan limits, session cost and a GitHub-style activity grid in the status line, plus a usage dashboard.",
+      "version": "0.1.0"
     }
   ]
 }

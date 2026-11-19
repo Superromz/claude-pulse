@@ -1,153 +1,135 @@
-# Claude Arcade
+# Claude Pulse
 
-**A fun side quest while you work.** Claude Arcade is an open-source Claude Code plugin that turns
-your terminal into a retro RPG. The first time you open it you create a hero. From then on, every
-prompt you send is a quest, every failing command is a monster, and every agent Claude launches
-joins your party. Your hero levels up from your real Claude usage: tools, finished tasks and
-tokens.
+**Your Claude usage at a glance, right where you work.** Claude Pulse is a Claude Code plugin that
+puts your context window, plan limits, session cost and a GitHub-style activity grid under the
+prompt, and gives you a usage dashboard one command away.
 
-It's Zork, 80s 8-bit games and the virtual pet you had to keep alive, rolled into one and living
-next to Claude in your terminal. Play along while you wait, or just glance over and watch your
-hero fight.
-
-- **All in the CLI.** Pixel art drawn with half-block characters in 24-bit color. No browser, no
-  window, no account.
-- **Built for developers.** XP comes only from real work, so your level actually means something.
-- **Open source, zero dependencies.** Plain Node 18+, MIT licensed.
-- **Local and private.** Everything stays in `~/.claude/arcade/`. Nothing is sent anywhere.
-
-## Screenshots
-
-![LEVEL UP banner over a battle, with the hero card and quest log](docs/images/level-up.png)
-
-| Boss fights on long tasks | Your hero camps between tasks |
-|---|---|
-| ![A mage fighting Ignarok the Magma Drake in the lava cave](docs/images/boss-drake.png) | ![Each class at the campfire doing its own activity](docs/images/camp.png) |
-
-| Create your hero | Spend gold in the Shop |
-|---|---|
-| ![The character creator](docs/images/creator.png) | ![The Shop tab with hats and a hero preview](docs/images/shop-tab.png) |
-
-| Hero roster | The world changes as you level |
-|---|---|
-| ![Three saved heroes on the roster screen](docs/images/roster.png) | ![Forest, lava cave, castle and space backgrounds](docs/images/biomes.png) |
-
-## 🌐 Play in your browser
-
-```
-arcade web
-```
-
-Opens the same live game in your browser with full graphics (GPU lighting, bloom, 60 fps). It runs
-only on your computer. See [Web View](https://github.com/Superromz/claude-arcade/blob/main/docs/wiki/Web-View.md).
-
-## Features at a glance
-
-- **Your hero.** Six classes (Mage, Ranger, Knight, Warlock, Bard, Rogue), each with a main stat,
-  an XP bonus and its own attack animations. Pick colors, skin, hair and an accessory in the
-  character creator. Keep several heroes, each with their own progress.
-- **Battles that follow Claude.** When Claude starts a task, waves of monsters attack. Every tool
-  call casts a matching spell. Long tasks bring a boss with phases.
-- **Spellbook.** Fireball, Frost Shard, Chain Lightning, Meteor and Starfall unlock as you level.
-  Cast them yourself from the hotbar, or click monsters to strike them.
-- **Companions.** Agents that Claude launches join the fight as hero classes, each with a battle
-  role.
-- **A camp between tasks.** When Claude is idle your hero sits by the fire doing a class activity,
-  then falls asleep. A board shows today's quests. While Claude works, a thought bubble shows what
-  your hero is up to.
-- **Real progression.** XP from tools, finished tasks, monsters slain during real tasks, and your
-  actual token usage. LEVEL UP banners, 172 trophies (some secret), daily/weekly/monthly bounties, a daily streak, and stats per project.
-- **A Shop.** Spend gold on hats, capes, auras, pets and weapon glows, or on battle buffs. Never on
-  XP.
-- **An animated status line.** A two-row HUD under Claude's prompt shows what your hero is doing,
-  your level, XP, HP, combo, "mana" (context left) and what the session has cost.
-- **Approve Claude from the game.** Permission requests can pop up in the game pane as an
-  encounter. Press Y or N and keep playing.
-- **Three themes.** Dungeon Crawl (rpg), Star Command (space) and 8-Bit Arcade (retro, ASCII-safe).
+- **Live:** the numbers come straight from Claude Code every second.
+- **Plain words:** "Context 27%", "5-hour 34% resets 1h12m", "This session $3.20".
+- **Local and private:** everything stays in `~/.claude/pulse/`. Nothing is sent anywhere.
+- **Zero dependencies:** plain Node 18+, MIT licensed.
 
 ## Install
 
-You need Claude Code and Node.js 18 or newer. In Claude Code, run:
+You need Claude Code and Node.js 18 or newer. In Claude Code:
 
 ```
-/plugin marketplace add superromz/claude-arcade
-/plugin install claude-arcade@claude-arcade
-/claude-arcade:setup
+/plugin marketplace add superromz/claude-pulse
+/plugin install claude-pulse@claude-pulse
+/claude-pulse:setup
 ```
 
-`setup` takes an optional theme: `/claude-arcade:setup space` or `/claude-arcade:setup retro`. The
-plugin installs at user scope, so it works in every project.
+Setup replaces your status line, adds a few usage tips under the spinner, and saves what was there
+before, so `/claude-pulse:uninstall` can put it back.
 
-Setup adds the status line and themed spinner to `~/.claude/settings.json` and backs up whatever was
-there before. `/claude-arcade:uninstall` puts your old settings back. See
-[Getting Started](docs/wiki/Getting-Started.md) for details and local installs.
-
-## Quick start
-
-1. Split your terminal so the game sits next to Claude. In Warp press `Ctrl+Shift+D`
-   (`Cmd+D` on macOS). In Windows Terminal, `/claude-arcade:play` opens the split for you.
-2. In the new pane, run:
-
-   ```sh
-   arcade
-   ```
-
-3. Create your hero, then go back to Claude and give it a task. The monsters arrive when Claude
-   starts working.
-
-Not sure how to split your terminal? Run `/claude-arcade:play` and it will tell you (and copy the
-command to your clipboard).
-
-## Controls
-
-| Key | Game pane |
+| Command | What it does |
 |---|---|
-| `1`-`6` | Cast a spell from the hotbar (1.5× damage, with cooldowns) |
-| `space` | Basic attack |
-| Mouse click | Strike a monster, cast from the hotbar, or switch tabs |
-| `w` | Summon a practice wave (gold only, no XP) |
-| `tab` / `←` `→` | Switch tab: Adventure, Campaign, Hero, Skills, Party, Guild, Bounties, Trophies, Shop, Projects (or click a tab) |
-| `h` | Hero roster (switch, create or delete heroes) |
-| `c` | Change your hero's look |
-| `t` | Next theme |
-| `p` | Follow a different Claude session |
-| `q` / `Esc` | Quit |
+| `/claude-pulse:setup` | Install the status line and spinner tips. |
+| `/claude-pulse:dashboard` | Print the full usage dashboard. |
+| `/claude-pulse:live` | Keep the dashboard open next to Claude (also: `claude-pulse` in any terminal). |
+| `/claude-pulse:activity` | Open your activity page in the browser. |
+| `/claude-pulse:colors red` | Activity grid colors: `green` (default), `red`, `blue` or `purple`. |
+| `/claude-pulse:plain on` | Plain text only (ASCII bars and symbols), for fonts that lack block and line characters. `off` turns it back. |
+| `/claude-pulse:uninstall` | Put your previous status line and tips back. |
 
-In the Shop, the arrow keys browse, `Enter` buys or equips, and `u` unequips. When a permission
-request shows up: `Y` allows it once, `N` denies it, `C` sends it back to Claude's normal dialog. The full list is on [Commands and Controls](docs/wiki/Commands-and-Controls.md).
+## The status line
 
-## Privacy
+```
+Context ━━━━────────── 27% 275k of 1M    5-hour ━━━━━──── 34% resets 1h12m    Weekly …            Dec     Jan     Feb   …   Sep     Oct     Nov
+Opus 5.5 · medium                       This session $3.20 · 1h05m · +120 −8    ⎇ dev          ■ ■ ■ ■ ■ ■ ■ ■ ■ ■   …   ■ ■ ■ ■ ■ ■ ■ ■ ■ ■
+                                                                                          Mon  ■ ■ ■ ■ ■ ■ ■ ■ ■ ■   …   ■ ■ ■ ■ ■ ■ ■ ■ ■ ■
+Lifetime    7.5B tokens since Jan 23, 2026                                                     ■ ■ ■ ■ ■ ■ ■ ■ ■ ■   …   ■ ■ ■ ■ ■ ■ ■ ■ ■ ■
+Past year   7.5B tokens · 39 active days                                                  Wed  ■ ■ ■ ■ ■ ■ ■ ■ ■ ■   …   ■ ■ ■ ■ ■ ■ ■ ■ ■ ■
+Streak      11 days · best 13                                                                  ■ ■ ■ ■ ■ ■ ■ ■ ■ ■   …   ■ ■ ■ ■ ■ ■ ■ ■ ■ ■
+Busiest day Sep 25 · 920M tokens                                                          Fri  ■ ■ ■ ■ ■ ■ ■ ■ ■ ■   …   ■ ■ ■ ■ ■ ■ ■ ■ ■ ■
+                                                                                               ■ ■ ■ ■ ■ ■ ■ ■ ■ ■   …   ■ ■ ■ ■ ■ ■ ■ ■ ■
+```
 
-Claude Arcade runs entirely on your machine. It reads Claude Code's hook events and your local
-transcripts (only to count tokens), and it writes to `~/.claude/arcade/`. It makes no network
-requests. See [Privacy and Data](docs/wiki/Privacy-and-Data.md).
+The top row holds the three gauges that matter most. Each one turns yellow at 60% and red at 85%.
+On a wide terminal your activity grid sits on the right, with a lifetime summary under the gauges.
 
-## Documentation
+| Item | What it means |
+|---|---|
+| Context | How full the conversation's context window is. |
+| 5-hour, Weekly | Your plan's usage windows (Pro and Max plans) and when each one resets. **↑ fast pace** means that at the current rate you'd reach the limit before it resets. |
+| Model · effort | The model answering and the effort level it uses. |
+| This session | What this session has cost, how long it has been open, and the lines added and removed. |
+| Today | What all your Claude Code sessions have cost today. |
+| Cache | Claude Code keeps your conversation cached for a while after each message, which makes the next message faster and cheaper. "Warm 47m" is how long that lasts; "cold" means the next message rebuilds it. |
+| ⎇ | The git branch of the folder you're working in. |
+| Activity grid | Like the contribution graph on GitHub: a column per week, a row per weekday, a square per day. The brighter the square, the busier the day; dim squares are days off. It shows as many weeks as fit, up to a year. Pick its colors with `/claude-pulse:colors red` (or `green`, `blue`, `purple`). Hover an active day to see its usage, like `Thu, Nov 19 | 259M tokens | 565 replies` (in terminals that preview links on hover, such as Warp). |
+| Lifetime | Every token Claude has read and written for you. Mostly context re-read from the cache, so the number gets big fast. |
+| Past year | Tokens in the last 12 months and how many days you used Claude. |
+| Streak | Days in a row you've used Claude, and your best run. Today doesn't break it until it's over. |
+| Busiest day | The day you used the most tokens. |
 
-The wiki explains how everything works:
+On a medium-width terminal the summary and grid move under the two main rows instead, side by
+side, so the full year still fits from about 165 columns. Narrower still, the grid shows fewer weeks,
+then steps aside (leaving two rows), and the wording gets shorter, so the rows never wrap. Anything Claude Code doesn't report (for example plan limits on an API key) is simply left out.
 
-- [Home](docs/wiki/Home.md) and [Getting Started](docs/wiki/Getting-Started.md)
-- [Heroes and Classes](docs/wiki/Heroes-and-Classes.md), [Hero Roster](docs/wiki/Hero-Roster.md)
-- [Combat and Spells](docs/wiki/Combat-and-Spells.md), [Companions](docs/wiki/Companions.md)
-- [Progression and XP](docs/wiki/Progression-and-XP.md), [Project Stats](docs/wiki/Project-Stats.md)
-- [Biomes and Themes](docs/wiki/Biomes-and-Themes.md), [Status Line and Toasts](docs/wiki/Status-Line-and-Toasts.md)
-- [In-Game Approvals](docs/wiki/In-Game-Approvals.md), [Commands and Controls](docs/wiki/Commands-and-Controls.md)
-- [Shop](docs/wiki/Shop.md), [Camp and Celebrations](docs/wiki/Camp-and-Celebrations.md), [Roadmap](docs/wiki/Roadmap.md), [FAQ](docs/wiki/FAQ.md)
-- For contributors: [Architecture](docs/wiki/Architecture.md) and [Contributing](CONTRIBUTING.md)
+## Your activity page
 
-## What's next
+`/claude-pulse:activity` opens `~/.claude/pulse/activity.html` in your browser: the past year as a
+GitHub-style grid, with a tooltip on every day (tokens and replies). It updates every 10 minutes and
+never leaves your computer.
 
-Class skill kits, a skill tree with paragon levels, recruitable companions, an HD mode, and a
-global leaderboard where you can compare your hero with everyone else's (and fight them in async
-PvP). See the [Roadmap](ROADMAP.md) and the [Changelog](CHANGELOG.md).
+## The dashboard
 
-## Contributing
+`/claude-pulse:dashboard` prints the full picture. `/claude-pulse:live` opens it next to Claude
+and keeps it up to date (in Windows Terminal it splits the window for you; elsewhere it copies the
+`claude-pulse` command so you can paste it into a split pane). In the live view, hover any square in
+the activity grid to see that day's tokens and replies.
 
-Contributions are welcome: new monsters, themes, spells, fixes and docs. The game is plain Node
-with no dependencies, so `npm test` is all you need to get going. Please read
-[CONTRIBUTING.md](CONTRIBUTING.md) first. Two rules matter most: update the docs in the same change,
-and XP only ever comes from real Claude usage.
+- **Plan limits**: both windows with reset times and whether you're on track.
+- **Spending**: today, yesterday, the last 7 and 30 days.
+- **Your activity**: the past year as a GitHub-style grid, in the colors you picked, with lifetime
+  tokens, active days, your current and longest streak, and your busiest day.
+- **Open sessions**: every Claude Code window active in the last 10 minutes, with its context
+  and cost.
+- **Activity, last 14 days**: tokens and replies per day.
+- **Projects** and **Models**: where your usage went this week, and how much input came from the
+  cache.
+
+## Where the numbers come from
+
+- The status line numbers come straight from Claude Code, every second.
+- Spending is Claude Code's own cost figure, recorded per session per day from the moment
+  Claude Pulse is installed. A session that was already open before midnight only counts the part of its
+  cost since midnight (spread evenly over the session).
+- Lifetime totals, activity, projects and models are read from Claude Code's history in `~/.claude/projects`, so
+  they go back as far as that history does. Older days come from Claude Code's own stats. Only new lines are read after the first time.
+
+Everything stays in `~/.claude/pulse/`. Nothing is sent anywhere.
+
+## Where it works
+
+Claude Pulse is a Claude Code plugin, so it runs inside Claude Code: on Windows, macOS and Linux,
+with Node.js 18 or newer. It doesn't work in other AI command-line tools.
+
+- **Colors:** exact shades in Warp, Windows Terminal, iTerm2, Kitty, WezTerm, VS Code and most Linux
+  terminals. Terminals that can't show them, such as macOS Terminal, automatically get the nearest
+  of 256 colors. To force one or the other, set `"color": "truecolor"` or `"color": "256"` in
+  `~/.claude/pulse/config.json`.
+- **Symbols:** if your font shows boxes instead of bars and squares, run `/claude-pulse:plain on`.
+- **Hover in the status line:** needs a terminal that previews links on hover, such as Warp. SSH
+  and tmux can strip it.
+- **Hover in the live dashboard:** needs mouse support, which almost every terminal has (in tmux,
+  turn on `set -g mouse on`).
+- **Plan limits:** Claude Code reports the 5-hour and weekly limits on Pro and Max plans. With an
+  API key those gauges are left out.
+
+## Development
+
+```sh
+npm test
+```
+
+Tests run on Windows, macOS and Linux with Node 18 and 24 on every push (`.github/workflows/test.yml`).
+
+The plugin lives in `plugins/claude-pulse/`: `statusline.js` (the status line), `dash.js` (the
+dashboard), `grid.js` (the activity grid), `page.js` (the activity page), `scan.js` (reads Claude
+Code's history), `lib.js` (shared helpers and the spend ledger) and `pulse.js` (the commands).
 
 ## License
 
-[MIT](LICENSE)
+MIT
