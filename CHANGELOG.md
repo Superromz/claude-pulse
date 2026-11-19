@@ -6,6 +6,8 @@ All notable changes to Usage Pulse are listed here. The format follows
 
 ## Unreleased
 
+## 0.2.0 - 2026-11-19
+
 ### Added
 - `/usage-pulse:settings` shows every setting with its current value and changes any of them, like `/usage-pulse:settings colors red`. Settings that used to need editing `config.json` by hand (the activity summary and grid, color depth, margin) can now be changed there too.
 - Alerts before you run out: a warning above the gauges when the 5-hour or weekly limit passes 80% or the context window passes 70% (with a nudge to `/compact`), plus one desktop notification each time. Thresholds and both parts can be changed in settings.
