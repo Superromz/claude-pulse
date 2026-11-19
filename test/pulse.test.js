@@ -1,0 +1,329 @@
+// Claude Pulse: status line, spend ledger, transcript scan and setup, each in a
+// throwaway HOME. Run with: node --test
+'use strict';
+
+const test = require('node:test');
+const assert = require('node:assert');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const { execFileSync } = require('child_process');
+
+const SCRIPTS = path.join(__dirname, '..', 'plugins', 'claude-pulse', 'scripts');
+const strip = (s) => s.replace(/\x1b\[[0-9;]*m/g, '').replace(/\x1b\]8;[^\x07]*\x07/g, '');
+
+function sandbox() {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'pulse-test-'));
+  const env = { ...process.env, HOME: home, USERPROFILE: home, APPDATA: home, PULSE_NO_CLIPBOARD: '1', NO_COLOR: '', COLUMNS: '' };
+  const run = (file, args = [], input = '', extra = {}) => execFileSync(process.execPath, [path.join(SCRIPTS, file), ...args], { input, env: { ...env, ...extra }, encoding: 'utf8' });
+  // Run lib/scan code inside the sandbox (they resolve HOME when they load).
+  const js = (code) => JSON.parse(execFileSync(process.execPath, ['-e',
+    `const L=require(${JSON.stringify(path.join(SCRIPTS, 'lib.js'))});const S=require(${JSON.stringify(path.join(SCRIPTS, 'scan.js'))});const G=require(${JSON.stringify(path.join(SCRIPTS, 'grid.js'))});const r=(()=>{${code}})();process.stdout.write(JSON.stringify(r===undefined?null:r));`],
+  { env, encoding: 'utf8' }) || 'null');
+  return { home, env, run, js };
+}
+
+const now = () => Date.now() / 1000;
+const payload = (over = {}) => ({
+  session_id: 'abc',
+  cwd: os.tmpdir(),
+  model: { id: 'claude-opus-5-5', display_name: 'Opus 5.5' },
+  effort: { level: 'high' },
+  cost: { total_cost_usd: 1.5, total_duration_ms: 60000, total_lines_added: 120, total_lines_removed: 8 },
+  context_window: { total_input_tokens: 275000, context_window_size: 1000000, used_percentage: 27 },
+  prompt_cache: { expires_at: now() + 1800 },
+  rate_limits: { five_hour: { used_percentage: 34, resets_at: now() + 3600 }, seven_day: { used_percentage: 20, resets_at: now() + 5 * 86400 } },
+  ...over,
+});
+
+test('status line: gauges on top, details below, in plain words', () => {
+  const { run } = sandbox();
+  const out = strip(run('statusline.js', [], JSON.stringify(payload())));
+  const [a, b] = out.split('\n');
+  assert.match(a, /^Context .* 27% 275k of 1M/);
+  assert.match(a, /5-hour .* 34% resets (59m|1h00m)/);
+  assert.match(a, /Weekly .* 20% resets/);
+  assert.match(b, /^Opus 5\.5 · high/);
+  assert.match(b, /This session \$1\.50 · 1m · \+120 −8/);
+  assert.match(b, /Today \$1\.50/);
+  assert.match(b, /Cache warm (29|30)m/);
+  // Columns line up: the session cost starts right under the 5-hour gauge.
+  assert.strictEqual(a.indexOf('5-hour'), b.indexOf('This session'));
+});
+
+// A lifetime file as the background scan writes it: active the last 5 days.
+function writeLifetime(home) {
+  const daily = {};
+  for (let i = 0; i < 5; i++) daily[new Date(Date.now() - i * 86400000).toLocaleDateString('en-CA')] = (i + 1) * 1e8;
+  fs.mkdirSync(path.join(home, '.claude', 'pulse'), { recursive: true });
+  fs.writeFileSync(path.join(home, '.claude', 'pulse', 'lifetime.json'), JSON.stringify({
+    tokens: 7.5e9, activeDays: 39, since: '2026-01-23', streak: 5, longest: 13, best: { day: '2026-09-25', tokens: 9.2e8 }, daily, at: Date.now(),
+  }));
+}
+
+test('wide terminal: contribution grid on the right, lifetime summary under the gauges', () => {
+  const { home, run } = sandbox();
+  writeLifetime(home);
+  const rows = strip(run('statusline.js', [], JSON.stringify(payload()), { COLUMNS: '255' })).split('\n');
+  assert.strictEqual(rows.length, 8); // month names + one row per weekday
+  assert.match(rows[0], /^Context .* Weekly .* {2}[A-Z][a-z]{2} .*[A-Z][a-z]{2}\s*$/);
+  assert.match(rows[1], /^Opus 5\.5 .* ■/);
+  assert.match(rows[2], / Mon {2}■/);
+  assert.match(rows[3], /^Lifetime {4}7\.5B tokens since Jan 23, 2026 .* ■/);
+  assert.match(rows[4], /^Past year {3}1\.5B tokens · 39 active days .* Wed {2}■/);
+  assert.match(rows[5], /^Streak {6}5 days · best 13 .* ■/);
+  assert.match(rows[6], /^Busiest day Sep 25 · 920M tokens .* Fri {2}■/);
+  // Claude Code cuts the last few cells with "…", so the rows stop 6 short of COLUMNS.
+  for (const r of rows) assert.ok([...r].length <= 249, r);
+  // The grid is a solid block on the right: every weekday row starts in the same column.
+  const starts = rows.slice(1).map((r) => r.search(/ {2}■|■ ■/));
+  assert.ok(new Set(rows.slice(1).map((r) => r.indexOf('■', r.length - 120))).size <= 2, starts.join());
+});
+
+test('medium terminals: summary and grid move under the two main rows', () => {
+  const { home, run } = sandbox();
+  writeLifetime(home);
+  const at = (cols) => strip(run('statusline.js', [], JSON.stringify(payload()), { COLUMNS: String(cols) })).split('\n');
+  const weeks = (rows, line) => (rows[line].match(/■/g) || []).length;
+  const mid = at(175);
+  assert.strictEqual(mid.length, 10); // 2 main rows + month names + 7 weekdays
+  assert.match(mid[0], /^Context /);
+  assert.match(mid[1], /^Opus 5\.5/);
+  assert.match(mid[2], /^⠀ +[A-Z][a-z]{2} /); // month names
+  assert.match(mid[4], /^Lifetime {4}7\.5B tokens since Jan 23, 2026 {4}Mon {2}■/);
+  assert.strictEqual(weeks(mid, 4), 53); // the full year fits
+  for (const r of mid) assert.ok([...r].length <= 169, r);
+  // Narrower: fewer weeks, same layout.
+  const narrow = at(110);
+  assert.strictEqual(narrow.length, 10);
+  assert.ok(weeks(narrow, 4) >= 8 && weeks(narrow, 4) < 53, String(weeks(narrow, 4)));
+  // Too narrow for any grid: just the two main rows.
+  const tiny = at(60);
+  assert.strictEqual(tiny.length, 2);
+  assert.doesNotMatch(tiny.join('\n'), /Lifetime|■/);
+});
+
+test('grid colors follow the chosen palette', () => {
+  const { home, run } = sandbox();
+  writeLifetime(home);
+  assert.match(run('pulse.js', ['colors', 'pink']), /Pick one of: red, green, blue, purple/);
+  run('pulse.js', ['colors', 'red']);
+  const out = run('statusline.js', [], JSON.stringify(payload()), { COLUMNS: '255' });
+  assert.match(out, /\x1b\[38;2;255;104;124m■/); // brightest red for the busiest day
+  assert.doesNotMatch(out, /\x1b\[38;2;57;211;83m■/); // no GitHub green
+});
+
+test('streaks, busiest day and activity levels', () => {
+  const { js } = sandbox();
+  const r = js(`
+    const day = (i) => L.dayKey(Date.now() - i * 86400000);
+    const models = (n) => ({ models: { m: { input: n, output: 0, cacheRead: 0, cacheWrite: 0 } } });
+    // Active yesterday and the 2 days before (today not yet): streak 3. A 4-day run earlier.
+    const days = { [day(1)]: models(10), [day(2)]: models(50), [day(3)]: models(10),
+      [day(10)]: models(1), [day(11)]: models(1), [day(12)]: models(1), [day(13)]: models(1) };
+    const lt = S.lifetime({ days }, 'missing.json');
+    const level = G.levels(Object.fromEntries(Array.from({ length: 20 }, (_, i) => ['d' + i, i + 1])));
+    return { streak: lt.streak, longest: lt.longest, best: lt.best.tokens, levels: [0, 1, 5, 10, 15, 20].map(level) };
+  `);
+  assert.deepStrictEqual(r, { streak: 3, longest: 4, best: 50, levels: [0, 1, 1, 2, 3, 4] });
+});
+
+test('dashboard shows a GitHub-style year grid with streaks', () => {
+  const { home, js } = sandbox();
+  writeLifetime(home);
+  // Render without rescanning, which would replace the lifetime file above.
+  const out = strip(js(`return require(${JSON.stringify(path.join(SCRIPTS, 'dash.js'))}).render({ width: 120 });`));
+  assert.match(out, /Your activity/);
+  const grid = out.split('\n').filter((l) => /^ {2}(Mon|Wed|Fri| {3}) {2}■/.test(l));
+  assert.strictEqual(grid.length >= 6, true); // 7 weekday rows (Saturday may end early)
+  assert.match(out, /current streak 5 days · {2}longest 13 days|current streak 5 days {2}· {2}longest 13 days/);
+  assert.match(out, /busiest day Sep 25/);
+  assert.match(out, /Less ■ ■ ■ ■ ■ More/);
+});
+
+test('lifetime adds Claude Code\'s stats cache for days older than the transcripts', () => {
+  const { home, js } = sandbox();
+  const stats = path.join(home, 'stats.json');
+  fs.writeFileSync(stats, JSON.stringify({ firstSessionDate: '2026-01-23T10:00:00Z', dailyModelTokens: [
+    { date: '2026-01-23', tokensByModel: { a: 100 } }, { date: '2026-10-05', tokensByModel: { a: 999 } },
+  ] }));
+  const usage = { days: { '2026-10-05': { models: { m: { input: 1, output: 2, cacheRead: 3, cacheWrite: 4 } } } } };
+  const lt = js(`return S.lifetime(${JSON.stringify(usage)}, ${JSON.stringify(stats)});`);
+  assert.strictEqual(lt.tokens, 110); // 100 from the stats cache + 10 from transcripts; 10-05 not counted twice
+  assert.strictEqual(lt.activeDays, 2);
+  assert.strictEqual(lt.since, '2026-01-23');
+});
+
+test('status line copes with an empty or partial payload', () => {
+  const { run } = sandbox();
+  assert.doesNotThrow(() => run('statusline.js', [], ''));
+  const out = strip(run('statusline.js', [], JSON.stringify({ session_id: 'x', rate_limits: { seven_day: { used_percentage: 50, resets_at: now() + 86400 } } })));
+  assert.doesNotMatch(out, /5-hour/);
+  assert.match(out, /Weekly/);
+});
+
+test('fast pace warning when usage runs ahead of the clock', () => {
+  const { run } = sandbox();
+  // 80% used with 4 of 5 hours still left.
+  const out = strip(run('statusline.js', [], JSON.stringify(payload({ rate_limits: { five_hour: { used_percentage: 80, resets_at: now() + 4 * 3600 } } }))));
+  assert.match(out, /↑ fast pace/);
+});
+
+test('daily spend: counts only new cost and survives a counter restart', () => {
+  const { js } = sandbox();
+  const r = js(`
+    const t = new Date(); t.setHours(12, 0, 0, 0); const at = t.getTime();
+    const p = (c) => ({ session_id: 's', cost: { total_cost_usd: c, total_duration_ms: 1000 } });
+    L.recordSession(p(0), at); L.recordSession(p(2), at + 20000); L.recordSession(p(3.5), at + 40000);
+    L.recordSession(p(0.5), at + 60000); // resumed session: counter restarted
+    return L.spentOn(L.loadSessions(), L.dayKey(at));
+  `);
+  assert.strictEqual(Math.round(r * 100) / 100, 4);
+});
+
+test('a session already running before midnight only counts today\'s share', () => {
+  const { js } = sandbox();
+  const r = js(`
+    const t = new Date(); t.setHours(6, 0, 0, 0); const at = t.getTime();
+    // 12 hours long, $12 spent: half of it after midnight.
+    L.recordSession({ session_id: 'old', cost: { total_cost_usd: 12, total_duration_ms: 12 * 3600000 } }, at);
+    return L.spentOn(L.loadSessions(), L.dayKey(at));
+  `);
+  assert.strictEqual(Math.round(r), 6);
+});
+
+test('transcript scan counts each reply once, by the project it started in', () => {
+  const { home, js } = sandbox();
+  const dir = path.join(home, '.claude', 'projects', 'proj');
+  fs.mkdirSync(dir, { recursive: true });
+  const ts = new Date().toISOString();
+  const usage = { input_tokens: 10, output_tokens: 100, cache_read_input_tokens: 1000, cache_creation_input_tokens: 50 };
+  const line = (id, cwd) => JSON.stringify({ type: 'assistant', timestamp: ts, cwd, message: { id, model: 'claude-opus-5-5', usage } });
+  const repo = path.join(home, 'work', 'shop');
+  fs.writeFileSync(path.join(dir, 'a.jsonl'), [
+    line('m1', repo), line('m1', repo), // one reply, two content blocks
+    JSON.stringify({ type: 'user', message: { content: 'hi' } }),
+    line('m2', path.join(repo, 'src')), // Claude cd'd into a subfolder
+  ].join('\n') + '\n');
+  fs.writeFileSync(path.join(dir, 'b.jsonl'), line('m3', path.join(repo, '.claude', 'worktrees', 'agent-1')) + '\n' + line('m4', repo).slice(0, 40));
+
+  const first = js(`const u = S.scan(); return S.totals(u, [L.dayKey()]);`);
+  assert.deepStrictEqual(Object.keys(first.models), ['Opus 5.5']);
+  assert.deepStrictEqual(Object.keys(first.projects), ['shop']);
+  assert.strictEqual(first.all.messages, 3);
+  assert.strictEqual(first.all.output, 300);
+
+  // The partial last line is finished later and picked up once.
+  fs.appendFileSync(path.join(dir, 'b.jsonl'), line('m4', repo).slice(40) + '\n');
+  const second = js(`const u = S.scan(); return S.totals(u, [L.dayKey()]).all.messages;`);
+  assert.strictEqual(second, 4);
+});
+
+test('dashboard renders with no data and with data', () => {
+  const { run } = sandbox();
+  const empty = strip(run('dash.js'));
+  assert.match(empty, /Plan limits/);
+  assert.match(empty, /No Claude Code session active/);
+  run('statusline.js', [], JSON.stringify(payload()));
+  const full = strip(run('dash.js'));
+  assert.match(full, /5-hour limit .* 34%/);
+  assert.match(full, /Open sessions \(1\)/);
+  assert.match(full, /Today \$1\.50/);
+});
+
+test('setup installs the status line and usage tips; uninstall restores what was there', () => {
+  const { home, run } = sandbox();
+  const settings = path.join(home, '.claude', 'settings.json');
+  fs.mkdirSync(path.dirname(settings), { recursive: true });
+  fs.writeFileSync(settings, JSON.stringify({ statusLine: { type: 'command', command: 'old' }, spinnerVerbs: { mode: 'append', verbs: ['Mine'] }, other: 1 }));
+  run('pulse.js', ['setup']);
+  let s = JSON.parse(fs.readFileSync(settings, 'utf8'));
+  assert.match(s.statusLine.command, /\.claude\/pulse\/bin\/statusline\.js/);
+  assert.ok(s.spinnerTipsOverride.tips.some((t) => /\/compact/.test(t)));
+  assert.strictEqual(s.spinnerTipsOverride.excludeDefault, false); // Claude Code's own tips stay
+  assert.deepStrictEqual(s.spinnerVerbs, { mode: 'append', verbs: ['Mine'] }); // not ours to touch
+  assert.strictEqual(s.other, 1);
+  assert.ok(fs.existsSync(path.join(home, '.claude', 'pulse', 'bin', 'statusline.js')));
+  run('pulse.js', ['setup']); // running it twice keeps the original backup
+  run('pulse.js', ['uninstall']);
+  s = JSON.parse(fs.readFileSync(settings, 'utf8'));
+  assert.strictEqual(s.statusLine.command, 'old');
+  assert.strictEqual(s.spinnerTipsOverride, undefined);
+  assert.strictEqual(s.other, 1);
+});
+
+test('rows with nothing on the left keep their indent (Claude Code trims leading spaces)', () => {
+  const { home, run } = sandbox();
+  writeLifetime(home);
+  const rows = strip(run('statusline.js', [], JSON.stringify(payload()), { COLUMNS: '255' })).split('\n');
+  for (const r of rows) assert.doesNotMatch(r, /^ /, r);
+  assert.match(rows[2], /^⠀ +Mon {2}■/);
+  assert.match(rows[7], /^⠀ +■/);
+});
+
+test('hovering an active square shows its usage, and the hover links take no space', () => {
+  const { home, run } = sandbox();
+  writeLifetime(home);
+  const out = run('statusline.js', [], JSON.stringify(payload()), { COLUMNS: '255' });
+  const links = [...out.matchAll(/\x1b\]8;;([^\x07]+)\x07/g)].map((m) => m[1]);
+  assert.strictEqual(links.length, 5); // one per active day
+  for (const l of links) assert.match(l, /^[A-Z][a-z]{2}, [A-Z][a-z]{2} \d+ \| \d+M tokens$/);
+  assert.ok(links.every((l) => /^[\x20-\x7e]+$/.test(l))); // OSC 8 targets: printable ASCII only
+  for (const r of strip(out).replace(/\x1b\]8;[^\x07]*\x07/g, '').split('\n')) assert.ok([...r].length <= 249);
+});
+
+test('activity page: every day of the year, with a tooltip each', () => {
+  const { home, js } = sandbox();
+  writeLifetime(home);
+  const file = js(`return require(${JSON.stringify(path.join(SCRIPTS, 'page.js'))}).writePage(S.loadLifetime());`);
+  const html = fs.readFileSync(file, 'utf8');
+  assert.ok((html.match(/<i id="d\d{4}-\d{2}-\d{2}"/g) || []).length >= 365);
+  assert.match(html, /data-tip="500M tokens on [A-Z][a-z]{2}, [A-Z][a-z]{2} \d+"/);
+  assert.match(html, /data-tip="No activity on /);
+});
+
+test('live view knows which day is under each screen cell', () => {
+  const { home, js } = sandbox();
+  writeLifetime(home);
+  const r = js(`
+    const D = require(${JSON.stringify(path.join(SCRIPTS, 'dash.js'))});
+    const hits = []; const lines = D.render({ width: 120, hits }).split('\\n');
+    const misplaced = hits.filter((h) => [...L.stripAnsi(lines[h.line])][h.col] !== '■').length;
+    const today = hits.find((h) => h.day === L.dayKey());
+    return { n: hits.length, misplaced, tip: D.dayTip(today.day) };
+  `);
+  assert.ok(r.n >= 300);
+  assert.strictEqual(r.misplaced, 0);
+  assert.match(r.tip, /^[A-Z][a-z]{2}, [A-Z][a-z]{2} \d+ · 100M tokens$/);
+});
+
+test('terminals without exact colors get the nearest 256-color shades', () => {
+  const { home, run } = sandbox();
+  writeLifetime(home);
+  run('pulse.js', ['colors', 'red']);
+  const term = (extra) => run('statusline.js', [], JSON.stringify(payload()), { COLUMNS: '255', COLORTERM: '', ...extra });
+  const mac = term({ TERM: 'xterm-256color', TERM_PROGRAM: 'Apple_Terminal' });
+  assert.doesNotMatch(mac, /\x1b\[38;2;/);
+  assert.match(mac, /\x1b\[38;5;204m■/); // bright pink, nearest in the 256-color palette
+  const warp = term({ TERM: 'xterm-256color', TERM_PROGRAM: 'WarpTerminal' });
+  assert.match(warp, /\x1b\[38;2;255;104;124m■/);
+  // The setting wins over detection.
+  fs.writeFileSync(path.join(home, '.claude', 'pulse', 'config.json'), JSON.stringify({ palette: 'red', color: 'truecolor' }));
+  assert.match(term({ TERM_PROGRAM: 'Apple_Terminal' }), /\x1b\[38;2;255;104;124m■/);
+});
+
+test('plain mode: no block, line or arrow symbols anywhere', () => {
+  const { home, run } = sandbox();
+  writeLifetime(home);
+  assert.match(run('pulse.js', ['plain', 'on']), /Plain text is on/);
+  const fast = payload({ rate_limits: { five_hour: { used_percentage: 80, resets_at: now() + 4 * 3600 } } });
+  const out = strip(run('statusline.js', [], JSON.stringify(fast), { COLUMNS: '255' }));
+  // Only ASCII, the middle dot separator and the invisible row-start blank.
+  assert.doesNotMatch(out.replace(/[·⠀\n]/g, ''), /[^\x20-\x7e]/);
+  assert.match(out, /Context =+-+ +27%/);
+  assert.match(out, /\^ fast pace/);
+  assert.match(out, /Mon {2}[.\-+*#]( [.\-+*#])+/);
+  const dash = strip(run('dash.js'));
+  assert.doesNotMatch(dash.replace(/[·\n]/g, ''), /[^\x20-\x7e]/);
+  assert.match(run('pulse.js', ['plain', 'off']), /Plain text is off/);
+});
