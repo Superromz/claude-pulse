@@ -158,9 +158,25 @@ function render({ width = 100, now = Date.now(), hits = null } = {}) {
     out.push(section('Projects, last 7 days', width));
     if (!projects.length) out.push(`  ${label('No activity this week.')}`);
     const total = allTokens(week.all) || 1;
+    // Cost per project from the spend records, named the same way as the token
+    // totals so the two line up. Cost only exists since Usage Pulse was installed.
+    const weekDays = new Set(L.lastDays(7, now));
+    const monthDays = new Set(L.lastDays(new Date(now).getDate(), now));
+    const cost = {};
+    for (const s of sessions) {
+      const c = cost[S.projectName(s.project)] || (cost[S.projectName(s.project)] = { week: 0, month: 0, seen: false });
+      for (const [d, v] of Object.entries(s.days || {})) {
+        if (weekDays.has(d)) { c.week += v.spent || 0; c.seen = true; }
+        if (monthDays.has(d)) { c.month += v.spent || 0; c.seen = true; }
+      }
+    }
+    // Room for "123,456 replies" and two $ columns; the bar takes what's left.
+    const projW = Math.max(1, width - 70);
+    const money = (c, k) => (c && c.seen ? paint('white', L.fmtUsd(c[k]).padStart(9)) : label((cfg.ascii ? '-' : '—').padStart(9)));
+    if (projects.length) out.push(`  ${' '.repeat(22 + projW + 25)}${label('7 days'.padStart(9))}  ${label('month'.padStart(9))}`);
     for (const [name, t] of projects) {
       const share = allTokens(t) / total;
-      out.push(`  ${L.padVis(name.slice(0, 22), 22)} ${paint('magenta', L.bar(share, Math.max(10, width - 52), cfg.ascii))} ${paint('white', `${String(Math.round(share * 100)).padStart(3)}%`)}  ${label(`${t.messages.toLocaleString('en-US')} replies`)}`);
+      out.push(`  ${L.padVis(name.slice(0, 22), 22)} ${paint('magenta', L.bar(share, projW, cfg.ascii))} ${paint('white', `${String(Math.round(share * 100)).padStart(3)}%`)}  ${label(`${t.messages.toLocaleString('en-US')} replies`.padEnd(15))}  ${money(cost[name], 'week')}  ${money(cost[name], 'month')}`);
     }
 
     out.push(section('Models, last 7 days', width));
