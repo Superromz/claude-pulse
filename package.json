@@ -1,5 +1,5 @@
 {
-  "name": "claude-pulse",
+  "name": "usage-pulse",
   "version": "0.1.0",
   "private": true,
   "description": "A Claude Code plugin that shows your Claude usage in the status line and a dashboard.",

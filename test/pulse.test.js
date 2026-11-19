@@ -1,4 +1,4 @@
-// Claude Pulse: status line, spend ledger, transcript scan and setup, each in a
+// Usage Pulse: status line, spend ledger, transcript scan and setup, each in a
 // throwaway HOME. Run with: node --test
 'use strict';
 
@@ -9,7 +9,7 @@ const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
 
-const SCRIPTS = path.join(__dirname, '..', 'plugins', 'claude-pulse', 'scripts');
+const SCRIPTS = path.join(__dirname, '..', 'plugins', 'usage-pulse', 'scripts');
 const strip = (s) => s.replace(/\x1b\[[0-9;]*m/g, '').replace(/\x1b\]8;[^\x07]*\x07/g, '');
 
 function sandbox() {
@@ -326,4 +326,15 @@ test('plain mode: no block, line or arrow symbols anywhere', () => {
   const dash = strip(run('dash.js'));
   assert.doesNotMatch(dash.replace(/[·\n]/g, ''), /[^\x20-\x7e]/);
   assert.match(run('pulse.js', ['plain', 'off']), /Plain text is off/);
+});
+
+test('a release has one version everywhere and notes in the changelog', () => {
+  const root = path.join(__dirname, '..');
+  const read = (f) => JSON.parse(fs.readFileSync(path.join(root, f), 'utf8'));
+  const version = read('plugins/usage-pulse/.claude-plugin/plugin.json').version;
+  assert.match(version, /^\d+\.\d+\.\d+$/);
+  assert.strictEqual(read('.claude-plugin/marketplace.json').plugins[0].version, version);
+  assert.strictEqual(read('package.json').version, version);
+  const { notes } = require(path.join(root, 'tools', 'release-notes.js'));
+  assert.ok(notes(fs.readFileSync(path.join(root, 'CHANGELOG.md'), 'utf8'), version), `CHANGELOG.md needs a "## ${version}" section`);
 });

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// CLI behind the /claude-pulse:* commands.
+// CLI behind the /usage-pulse:* commands.
 //   pulse.js setup            install the status line and spinner tips into ~/.claude/settings.json
 //   pulse.js uninstall        restore the settings that setup replaced
 //   pulse.js dashboard        print the usage dashboard
@@ -26,9 +26,9 @@ const TIPS = [
   'Switching tasks? /clear starts fresh, so old context stops costing tokens',
   'A warm cache makes your next message cheaper and faster. The status line shows how long it lasts',
   '"↑ fast pace" on a limit means you\'d reach it before it resets',
-  '/claude-pulse:dashboard shows where your usage went this week',
-  '/claude-pulse:live keeps your usage dashboard open next to Claude',
-  'Change the activity grid colors with /claude-pulse:colors',
+  '/usage-pulse:dashboard shows where your usage went this week',
+  '/usage-pulse:live keeps your usage dashboard open next to Claude',
+  'Change the activity grid colors with /usage-pulse:colors',
 ];
 
 // Copy scripts to a stable path: the plugin dir changes on every update.
@@ -37,10 +37,15 @@ function installScripts() {
   for (const f of fs.readdirSync(__dirname)) if (f.endsWith('.js') && f !== 'pulse.js') fs.copyFileSync(path.join(__dirname, f), path.join(BIN, f));
 }
 
-// A `claude-pulse` command on PATH that opens the live dashboard. Windows: a
+// A `usage-pulse` command on PATH that opens the live dashboard. Windows: a
 // .cmd next to npm's global shims (already on PATH with Node). macOS/Linux:
-// ~/.local/bin/claude-pulse. Returns where it went, or null if no PATH dir fit.
+// ~/.local/bin/usage-pulse. Returns where it went, or null if no PATH dir fit.
+// Every place a command may be, including `claude-pulse`, its name before 0.1.0.
+const commandFiles = () => ['usage-pulse', 'claude-pulse'].flatMap((n) => [path.join(process.env.APPDATA || '', 'npm', n + '.cmd'), path.join(os.homedir(), '.local', 'bin', n)]);
+const removeCommands = () => { for (const f of commandFiles()) try { fs.unlinkSync(f); } catch {} };
+
 function installCommand() {
+  removeCommands();
   const dash = path.join(BIN, 'dash.js');
   const dirs = (process.env.PATH || '').split(path.delimiter).filter(Boolean);
   const onPath = (d) => dirs.some((p) => path.resolve(p).toLowerCase() === path.resolve(d).toLowerCase());
@@ -48,13 +53,13 @@ function installCommand() {
     if (process.platform === 'win32') {
       const npmDir = path.join(process.env.APPDATA || '', 'npm');
       if (!process.env.APPDATA || !fs.existsSync(npmDir) || !onPath(npmDir)) return null;
-      const target = path.join(npmDir, 'claude-pulse.cmd');
+      const target = path.join(npmDir, 'usage-pulse.cmd');
       fs.writeFileSync(target, `@echo off\r\nnode "${dash}" --live %*\r\n`);
       return target;
     }
     const local = path.join(os.homedir(), '.local', 'bin');
     fs.mkdirSync(local, { recursive: true });
-    const target = path.join(local, 'claude-pulse');
+    const target = path.join(local, 'usage-pulse');
     fs.writeFileSync(target, `#!/bin/sh\nexec node "${dash}" --live "$@"\n`, { mode: 0o755 });
     return onPath(local) ? target : null;
   } catch { return null; }
@@ -74,10 +79,10 @@ function setup() {
   // Read the history now so the first dashboard opens instantly.
   try { require('./scan').scanLocked(); } catch {}
 
-  console.log('Claude Pulse is installed. Context, plan limits, cost and your activity now show under the prompt.');
+  console.log('Usage Pulse is installed. Context, plan limits, cost and your activity now show under the prompt.');
   console.log(`Previous settings saved to ${BACKUP}.`);
   const cmd = installCommand();
-  console.log(cmd ? 'Live dashboard: split your terminal and run: claude-pulse' : `Live dashboard: run /claude-pulse:live, or in any terminal: ${node('dash.js', ' --live')}`);
+  console.log(cmd ? 'Live dashboard: split your terminal and run: usage-pulse' : `Live dashboard: run /usage-pulse:live, or in any terminal: ${node('dash.js', ' --live')}`);
 }
 
 function uninstall() {
@@ -89,10 +94,8 @@ function uninstall() {
   }
   L.writeJSON(SETTINGS, settings, true);
   try { fs.unlinkSync(BACKUP); } catch {}
-  for (const f of [path.join(process.env.APPDATA || '', 'npm', 'claude-pulse.cmd'), path.join(os.homedir(), '.local', 'bin', 'claude-pulse')]) {
-    try { fs.unlinkSync(f); } catch {}
-  }
-  console.log(backup.statusLine ? 'Claude Pulse removed. Your previous status line is back.' : 'Claude Pulse removed.');
+  removeCommands();
+  console.log(backup.statusLine ? 'Usage Pulse removed. Your previous status line is back.' : 'Usage Pulse removed.');
 }
 
 function dashboard() {
@@ -109,7 +112,7 @@ function dashboard() {
 function live() {
   const { spawn, execSync } = require('child_process');
   installScripts();
-  const cmd = installCommand() ? 'claude-pulse' : node('dash.js', ' --live');
+  const cmd = installCommand() ? 'usage-pulse' : node('dash.js', ' --live');
   if (process.env.WT_SESSION) {
     spawn('wt.exe', ['-w', '0', 'sp', '-V', '-s', '0.45', 'node', path.join(BIN, 'dash.js'), '--live'], { detached: true, stdio: 'ignore' }).unref();
     console.log('Opened the live dashboard in a Windows Terminal split pane.');

@@ -1,5 +1,5 @@
 // Shared paths, ANSI helpers, formatting and the per-session spend ledger for
-// Claude Pulse. Everything lives in ~/.claude/pulse so the status line (user
+// Usage Pulse. Everything lives in ~/.claude/pulse so the status line (user
 // settings) and the commands (plugin root) read the same files across updates.
 'use strict';
 
@@ -196,7 +196,7 @@ function recordSession(input, now = Date.now()) {
     const d = rec.days[today] || (rec.days[today] = { spent: 0 });
     if (!prev && cost > 0) {
       // First time this session is seen but it already has spend (it was open
-      // before Claude Pulse was installed): count only the share that falls
+      // before Usage Pulse was installed): count only the share that falls
       // after midnight, assuming it was spent evenly over the session.
       const dur = (input.cost.total_duration_ms || 0) / 1000;
       const sinceMidnight = (now - new Date(now).setHours(0, 0, 0, 0)) / 1000;

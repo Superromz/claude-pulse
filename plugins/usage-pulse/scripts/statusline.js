@@ -170,4 +170,4 @@ function withActivity(base, lt, cols, cfg, now) {
   return [...base, ...grid.map((g, i) => `${L.padVis(lefts[i] || '', sumW)}    ${g}`)];
 }
 
-try { main(); } catch { process.stdout.write('Claude Pulse'); }
+try { main(); } catch { process.stdout.write('Usage Pulse'); }

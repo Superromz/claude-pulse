@@ -1,13 +1,13 @@
 {
-  "name": "claude-pulse",
+  "name": "usage-pulse",
   "owner": {
     "name": "Superromz"
   },
-  "description": "Claude Pulse: your Claude usage at a glance in Claude Code.",
+  "description": "Usage Pulse: your Claude usage at a glance in Claude Code.",
   "plugins": [
     {
-      "name": "claude-pulse",
-      "source": "./plugins/claude-pulse",
+      "name": "usage-pulse",
+      "source": "./plugins/usage-pulse",
       "description": "See your Claude usage at a glance: context window, 5-hour and weekly plan limits, session cost and a GitHub-style activity grid in the status line, plus a usage dashboard.",
       "version": "0.1.0"
     }

@@ -1,5 +1,5 @@
 // A local web page with your activity grid and real hover tooltips, opened
-// with /claude-pulse:activity. Written by the background scan; never served
+// with /usage-pulse:activity. Written by the background scan; never served
 // online. Also the hover text for the status line's squares.
 'use strict';
 
@@ -60,7 +60,7 @@ function writePage(lt, cfg = L.loadConfig(), now = Date.now()) {
 
   const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Claude Pulse activity</title>
+<title>Usage Pulse activity</title>
 <style>
 :root{--bg:#0d1117;--fg:#e6edf3;--dim:#8b949e;--card:#161b22;--line:#30363d}
 @media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f6f8fa;--fg:#1f2328;--dim:#59636e;--card:#fff;--line:#d1d9e0}}

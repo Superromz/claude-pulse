@@ -1,0 +1,31 @@
+name: Release
+
+# Runs when a release tag is pushed (`claude plugin tag --push` makes
+# usage-pulse--v<version>). Tests, then publishes the GitHub Release with that
+# version's CHANGELOG section as its notes.
+on:
+  push:
+    tags: ['usage-pulse--v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm test
+      - name: Tag matches plugin.json
+        run: |
+          version="${GITHUB_REF_NAME#usage-pulse--v}"
+          actual=$(node -p "require('./plugins/usage-pulse/.claude-plugin/plugin.json').version")
+          [ "$version" = "$actual" ] || { echo "Tag says $version, plugin.json says $actual"; exit 1; }
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+      - run: node tools/release-notes.js "$VERSION" > notes.md
+      - run: gh release create "$GITHUB_REF_NAME" --title "Usage Pulse $VERSION" --notes-file notes.md --verify-tag
+        env:
+          GH_TOKEN: ${{ github.token }}
