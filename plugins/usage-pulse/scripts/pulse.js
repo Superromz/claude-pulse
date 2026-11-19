@@ -4,6 +4,7 @@
 //   pulse.js uninstall        restore the settings that setup replaced
 //   pulse.js dashboard        print the usage dashboard
 //   pulse.js live             open the live dashboard (split pane where the terminal allows it)
+//   pulse.js settings [name] [value]  list every setting, or change one
 //   pulse.js colors <name>    colors of the activity grid (green, red, blue, purple)
 //   pulse.js activity         open the activity page in the browser
 //   pulse.js plain <on|off>   plain text only, for fonts without block and line symbols
@@ -131,16 +132,35 @@ function live() {
   console.log(`  ${cmd}`);
 }
 
-function colors(name) {
-  const { PALETTES } = require('./grid');
+// /usage-pulse:settings: list every setting, show one, or change one.
+function settings(name, value) {
+  const { OPTIONS, option } = require('./options');
   const cfg = L.loadConfig();
-  if (!PALETTES[name]) return console.log(`Pick one of: ${Object.keys(PALETTES).join(', ')}. Now: ${cfg.palette}.`);
-  cfg.palette = name;
+  if (!name) {
+    const width = Math.max(...OPTIONS.map((o) => o.name.length)) + 2;
+    console.log('Usage Pulse settings. Change one with /usage-pulse:settings <name> <value>.\n');
+    for (const o of OPTIONS) {
+      console.log(`${o.name.padEnd(width)}${o.show(cfg[o.key]).padEnd(10)} ${o.values.join(', ')}`);
+      console.log(`${' '.repeat(width)}${o.help}`);
+    }
+    return;
+  }
+  const o = option(name);
+  if (!o) return console.log(`There's no setting called "${name}". Settings: ${OPTIONS.map((x) => x.name).join(', ')}.`);
+  if (value === undefined) return console.log(`${o.name} is ${o.show(cfg[o.key])} (${o.values.join(', ')}). ${o.help}`);
+  const v = o.parse(value);
+  if (v === undefined) return console.log(`Pick one of: ${o.values.join(', ')}. Now: ${o.show(cfg[o.key])}.`);
+  cfg[o.key] = v;
   L.saveConfig(cfg);
-  const lt = require('./scan').loadLifetime();
-  if (lt) try { require('./page').writePage(lt, cfg); } catch {}
-  console.log(`The activity grid is now ${name}.`);
+  // The activity page has the grid colors baked in.
+  if (o.key === 'palette') {
+    const lt = require('./scan').loadLifetime();
+    if (lt) try { require('./page').writePage(lt, cfg); } catch {}
+  }
+  console.log(o.done(v));
 }
+
+const colors = (name) => settings('colors', name || '');
 
 function activity() {
   const P = require('./page');
@@ -151,13 +171,9 @@ function activity() {
   console.log(`Opened your activity page: ${P.PAGE_FILE}`);
 }
 
-function plain(arg) {
-  const cfg = L.loadConfig();
-  cfg.ascii = arg === 'on' || arg === 'off' ? arg === 'on' : !cfg.ascii;
-  L.saveConfig(cfg);
-  console.log(cfg.ascii ? 'Plain text is on: bars, squares and symbols are now ASCII.' : 'Plain text is off: bars, squares and symbols are back.');
-}
+// With no on/off, plain flips the current setting.
+const plain = (arg) => settings('plain', arg === 'on' || arg === 'off' ? arg : (L.loadConfig().ascii ? 'off' : 'on'));
 
-const [cmd, arg] = process.argv.slice(2);
-const commands = { setup, uninstall, dashboard, live, activity, plain: () => plain(arg), colors: () => colors(arg) };
-(commands[cmd] || (() => console.log('Usage: pulse.js setup|uninstall|dashboard|live|activity|plain <on|off>|colors <name>')))();
+const [cmd, arg, value] = process.argv.slice(2);
+const commands = { setup, uninstall, dashboard, live, activity, plain: () => plain(arg), colors: () => colors(arg), settings: () => settings(arg, value) };
+(commands[cmd] || (() => console.log('Usage: pulse.js setup|uninstall|dashboard|live|activity|settings [name] [value]|plain <on|off>|colors <name>')))();

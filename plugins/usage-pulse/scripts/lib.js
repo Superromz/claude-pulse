@@ -38,17 +38,8 @@ function readStdin() {
   try { return JSON.parse(fs.readFileSync(0, 'utf8').replace(/^﻿/, '') || '{}'); } catch { return {}; }
 }
 
-const DEFAULT_CONFIG = {
-  // Lifetime summary and the contribution grid in the status line.
-  lifetime: true,
-  // Colors of the contribution grid: green, red, blue or purple.
-  palette: 'green',
-  // Plain text only (no block or line symbols), for fonts that lack them.
-  ascii: false,
-  // 'auto', 'truecolor' or '256'. Auto picks 256 colors in terminals that
-  // can't show exact shades, such as macOS Terminal.
-  color: 'auto',
-};
+// Every setting and its default is described in options.js.
+const { DEFAULT_CONFIG } = require('./options');
 
 function loadConfig() { return { ...DEFAULT_CONFIG, ...readJSON(CONFIG_FILE, {}) }; }
 function saveConfig(cfg) { writeJSON(CONFIG_FILE, cfg); }

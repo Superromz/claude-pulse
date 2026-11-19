@@ -47,9 +47,26 @@ before, so `/usage-pulse:uninstall` can put it back.
 | `/usage-pulse:dashboard` | Print the full usage dashboard. |
 | `/usage-pulse:live` | Keep the dashboard open next to Claude (also: `usage-pulse` in any terminal). |
 | `/usage-pulse:activity` | Open your activity page in the browser. |
-| `/usage-pulse:colors red` | Activity grid colors: `green` (default), `red`, `blue` or `purple`. |
-| `/usage-pulse:plain on` | Plain text only (ASCII bars and symbols), for fonts that lack block and line characters. `off` turns it back. |
+| `/usage-pulse:settings` | See every setting, or change one, like `/usage-pulse:settings colors red`. See [Settings](#settings). |
+| `/usage-pulse:colors red` | Shortcut for the activity grid colors: `green` (default), `red`, `blue` or `purple`. |
+| `/usage-pulse:plain on` | Shortcut for plain text only (ASCII bars and symbols), for fonts that lack block and line characters. `off` turns it back. |
 | `/usage-pulse:uninstall` | Put your previous status line and tips back. |
+
+### Settings
+
+`/usage-pulse:settings` lists every setting with its current value and what it can be, and
+`/usage-pulse:settings <name> <value>` changes one. Changes show up in the status line within a
+second, with no restart.
+
+| Setting | Values | What it does |
+|---|---|---|
+| `colors` | `green` (default), `red`, `blue`, `purple` | Colors of the activity grid and the activity page. |
+| `plain` | `on`, `off` (default) | Plain text only: ASCII bars and symbols, for fonts that show boxes instead. |
+| `activity` | `on` (default), `off` | The lifetime summary and activity grid in the status line. |
+| `color-depth` | `auto` (default), `truecolor`, `256` | `auto` uses 256 colors in terminals that can't show exact shades, such as macOS Terminal. |
+| `margin` | `0` to `40` (default `6`) | Columns kept free at the right of the status line, where Claude Code cuts it off. |
+
+Settings are saved in `~/.claude/pulse/config.json`.
 
 ## The status line
 
@@ -118,8 +135,8 @@ with Node.js 18 or newer. It doesn't work in other AI command-line tools.
 
 - **Colors:** exact shades in Warp, Windows Terminal, iTerm2, Kitty, WezTerm, VS Code and most Linux
   terminals. Terminals that can't show them, such as macOS Terminal, automatically get the nearest
-  of 256 colors. To force one or the other, set `"color": "truecolor"` or `"color": "256"` in
-  `~/.claude/pulse/config.json`.
+  of 256 colors. To force one or the other, run `/usage-pulse:settings color-depth truecolor` or
+  `/usage-pulse:settings color-depth 256`.
 - **Symbols:** if your font shows boxes instead of bars and squares, run `/usage-pulse:plain on`.
 - **Hover in the status line:** needs a terminal that previews links on hover, such as Warp. SSH
   and tmux can strip it.
