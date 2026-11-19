@@ -649,3 +649,54 @@ test('layout: compact, grid, summary and branch settings choose what the status 
   assert.doesNotMatch(rows()[1], /⎇/);
   assert.strictEqual(rows().length, 8);
 });
+
+test('doctor: each problem fails its own check with a fix, and it never changes a file', () => {
+  const { home, run } = sandbox();
+  fs.mkdirSync(path.join(home, '.claude', 'projects'), { recursive: true });
+  run('pulse.js', ['setup']);
+  run('statusline.js', [], JSON.stringify(payload()));
+  run('pulse.js', ['dashboard']);
+
+  // Every file under ~/.claude, with its contents, to prove the doctor only reads.
+  const snapshot = () => {
+    const all = {};
+    const walk = (d) => { for (const f of fs.readdirSync(d)) { const p = path.join(d, f); if (fs.statSync(p).isDirectory()) walk(p); else all[p] = fs.readFileSync(p, 'utf8'); } };
+    walk(path.join(home, '.claude'));
+    return all;
+  };
+  const doctor = () => {
+    const before = snapshot();
+    const out = run('pulse.js', ['doctor']);
+    assert.deepStrictEqual(snapshot(), before);
+    return out;
+  };
+
+  const healthy = doctor();
+  assert.doesNotMatch(healthy, /\[fix\]/);
+  assert.match(healthy, /^\[ok\] {3}The status line is Usage Pulse$/m);
+  assert.match(healthy, /^\[ok\] {3}Status line scripts match the installed plugin$/m);
+  assert.match(healthy, /^\[ok\] {3}Plan limits are reported$/m);
+  assert.match(healthy, /^Everything looks right\.$/m);
+
+  // An outdated copy of a script.
+  const bin = path.join(home, '.claude', 'pulse', 'bin');
+  fs.appendFileSync(path.join(bin, 'lib.js'), '\n// old\n');
+  assert.match(doctor(), /^\[fix\]  Status line scripts are out of date\n {7}They don't match the installed plugin \(lib\.js\)\. Run \/usage-pulse:setup\.$/m);
+  // A missing one.
+  fs.unlinkSync(path.join(bin, 'grid.js'));
+  assert.match(doctor(), /^\[fix\]  Status line scripts are missing\n {7}Not found in .*: grid\.js\. Run \/usage-pulse:setup\.$/m);
+
+  // Another tool took over the status line.
+  const settings = path.join(home, '.claude', 'settings.json');
+  const s = JSON.parse(fs.readFileSync(settings, 'utf8'));
+  s.statusLine.command = 'other-tool --status';
+  fs.writeFileSync(settings, JSON.stringify(s));
+  const out = doctor();
+  assert.match(out, /^\[fix\]  Another tool replaced the status line\n {7}It runs: other-tool --status\. Run \/usage-pulse:setup to switch back\.$/m);
+  assert.match(out, /^2 things to fix\.$/m);
+
+  // An old Node, and plain text mode's own wording.
+  assert.match(run('pulse.js', ['doctor'], '', { PULSE_NODE_VERSION: '18.1.0' }), /^\[fix\]  Node\.js 18\.1\.0 is too old$/m);
+  run('pulse.js', ['plain', 'on']);
+  assert.match(run('pulse.js', ['doctor']), /^\[info\] Plain text is on: symbols are ASCII$/m);
+});

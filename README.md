@@ -51,6 +51,7 @@ before, so `/usage-pulse:uninstall` can put it back.
 | `/usage-pulse:settings` | See every setting, or change one, like `/usage-pulse:settings colors red`. See [Settings](#settings). |
 | `/usage-pulse:colors red` | Shortcut for the activity grid colors: `green` (default), `red`, `blue` or `purple`. |
 | `/usage-pulse:plain on` | Shortcut for plain text only (ASCII bars and symbols), for fonts that lack block and line characters. `off` turns it back. |
+| `/usage-pulse:doctor` | Something looks wrong? Checks Node, the status line setting, its scripts, Claude Code's history, plan limits, colors and symbols, and says how to fix anything that's off. It changes nothing. |
 | `/usage-pulse:uninstall` | Put your previous status line and tips back. |
 
 ### Settings
@@ -178,6 +179,9 @@ Everything stays in `~/.claude/pulse/`. Nothing is sent anywhere.
 
 Usage Pulse is a Claude Code plugin, so it runs inside Claude Code: on Windows, macOS and Linux,
 with Node.js 20 or newer. It doesn't work in other AI command-line tools.
+
+**Something looks wrong?** Run `/usage-pulse:doctor`: it checks the usual causes below and tells you
+the fix for each.
 
 - **Colors:** exact shades in Warp, Windows Terminal, iTerm2, Kitty, WezTerm, VS Code and most Linux
   terminals. Terminals that can't show them, such as macOS Terminal, automatically get the nearest
