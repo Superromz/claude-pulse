@@ -338,3 +338,45 @@ test('a release has one version everywhere and notes in the changelog', () => {
   const { notes } = require(path.join(root, 'tools', 'release-notes.js'));
   assert.ok(notes(fs.readFileSync(path.join(root, 'CHANGELOG.md'), 'utf8'), version), `CHANGELOG.md needs a "## ${version}" section`);
 });
+
+test('settings: one command lists every setting and changes any of them', () => {
+  const { home, run } = sandbox();
+  const { OPTIONS } = require(path.join(SCRIPTS, 'options.js'));
+  const config = path.join(home, '.claude', 'pulse', 'config.json');
+  run('pulse.js', ['settings', 'colors', 'red']);
+  const list = run('pulse.js', ['settings']);
+  for (const o of OPTIONS) assert.match(list, new RegExp(`^${o.name} +[^ ]`, 'm'), o.name);
+  assert.match(list, /^colors +red /m);
+  // Grid colors offered by the setting are exactly the palettes that exist.
+  assert.deepStrictEqual(OPTIONS.find((o) => o.name === 'colors').values, Object.keys(require(path.join(SCRIPTS, 'grid.js')).PALETTES));
+
+  // Wrong names and values change nothing.
+  const before = fs.readFileSync(config, 'utf8');
+  assert.match(run('pulse.js', ['settings', 'colors', 'pink']), /Pick one of: red, green, blue, purple\. Now: red\./);
+  assert.match(run('pulse.js', ['settings', 'margin', '99']), /Pick one of: 0 to 40\. Now: 6\./);
+  assert.match(run('pulse.js', ['settings', 'nope', 'on']), /no setting called "nope"/);
+  assert.strictEqual(fs.readFileSync(config, 'utf8'), before);
+
+  // A change shows up on the status line's next run.
+  writeLifetime(home);
+  const rows = () => strip(run('statusline.js', [], JSON.stringify(payload()), { COLUMNS: '255' })).split('\n').length;
+  assert.strictEqual(rows(), 8);
+  assert.match(run('pulse.js', ['settings', 'activity', 'off']), /activity is now off/);
+  assert.strictEqual(rows(), 2);
+
+  // The old shortcuts still work the same way.
+  assert.match(run('pulse.js', ['colors', 'blue']), /The activity grid is now blue\./);
+  assert.match(run('pulse.js', ['plain']), /Plain text is on/);
+  assert.match(run('pulse.js', ['plain', 'off']), /Plain text is off/);
+  assert.deepStrictEqual(JSON.parse(fs.readFileSync(config, 'utf8')), { palette: 'blue', ascii: false, lifetime: false, color: 'auto', margin: 6 });
+});
+
+test('settings: a config.json written by an older version keeps working', () => {
+  const { home, run } = sandbox();
+  fs.mkdirSync(path.join(home, '.claude', 'pulse'), { recursive: true });
+  fs.writeFileSync(path.join(home, '.claude', 'pulse', 'config.json'), JSON.stringify({ palette: 'purple', lifetime: false }));
+  const list = run('pulse.js', ['settings']);
+  assert.match(list, /^colors +purple /m);
+  assert.match(list, /^activity +off /m);
+  assert.match(list, /^margin +6 /m);
+});

@@ -6,6 +6,9 @@ All notable changes to Usage Pulse are listed here. The format follows
 
 ## Unreleased
 
+### Added
+- `/usage-pulse:settings` shows every setting with its current value and changes any of them, like `/usage-pulse:settings colors red`. Settings that used to need editing `config.json` by hand (the activity summary and grid, color depth, margin) can now be changed there too.
+
 ## 0.1.0 - 2026-11-19
 
 ### Added
