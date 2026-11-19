@@ -4,6 +4,8 @@
 puts your context window, plan limits, session cost and a GitHub-style activity grid under the
 prompt, and gives you a usage dashboard one command away.
 
+![Usage Pulse under the Claude Code prompt: context, 5-hour and weekly gauges, session cost, and a year of activity as a red grid](docs/statusline.png)
+
 - **Live:** the numbers come straight from Claude Code every second.
 - **Plain words:** "Context 27%", "5-hour 34% resets 1h12m", "This session $3.20".
 - **Local and private:** everything stays in `~/.claude/pulse/`. Nothing is sent anywhere.
@@ -51,16 +53,7 @@ before, so `/usage-pulse:uninstall` can put it back.
 
 ## The status line
 
-```
-Context ━━━━────────── 27% 275k of 1M    5-hour ━━━━━──── 34% resets 1h12m    Weekly …            Dec     Jan     Feb   …   Sep     Oct     Nov
-Opus 5.5 · medium                       This session $3.20 · 1h05m · +120 −8    ⎇ dev          ■ ■ ■ ■ ■ ■ ■ ■ ■ ■   …   ■ ■ ■ ■ ■ ■ ■ ■ ■ ■
-                                                                                          Mon  ■ ■ ■ ■ ■ ■ ■ ■ ■ ■   …   ■ ■ ■ ■ ■ ■ ■ ■ ■ ■
-Lifetime    7.5B tokens since Jan 23, 2026                                                     ■ ■ ■ ■ ■ ■ ■ ■ ■ ■   …   ■ ■ ■ ■ ■ ■ ■ ■ ■ ■
-Past year   7.5B tokens · 39 active days                                                  Wed  ■ ■ ■ ■ ■ ■ ■ ■ ■ ■   …   ■ ■ ■ ■ ■ ■ ■ ■ ■ ■
-Streak      11 days · best 13                                                                  ■ ■ ■ ■ ■ ■ ■ ■ ■ ■   …   ■ ■ ■ ■ ■ ■ ■ ■ ■ ■
-Busiest day Sep 25 · 920M tokens                                                          Fri  ■ ■ ■ ■ ■ ■ ■ ■ ■ ■   …   ■ ■ ■ ■ ■ ■ ■ ■ ■ ■
-                                                                                               ■ ■ ■ ■ ■ ■ ■ ■ ■ ■   …   ■ ■ ■ ■ ■ ■ ■ ■ ■
-```
+The screenshot above shows it on a wide terminal (with demo numbers).
 
 The top row holds the three gauges that matter most. Each one turns yellow at 60% and red at 85%.
 On a wide terminal your activity grid sits on the right, with a lifetime summary under the gauges.
@@ -146,6 +139,9 @@ Tests run on Windows, macOS and Linux with Node 18 and 24 on every push (`.githu
 The plugin lives in `plugins/usage-pulse/`: `statusline.js` (the status line), `dash.js` (the
 dashboard), `grid.js` (the activity grid), `page.js` (the activity page), `scan.js` (reads Claude
 Code's history), `lib.js` (shared helpers and the spend ledger) and `pulse.js` (the commands).
+
+`node tools/screenshot.js` redraws `docs/statusline.png` from made-up demo data (needs Python with
+Pillow), so update it whenever the status line looks different.
 
 ## Releasing
 
