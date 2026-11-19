@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // Status line under Claude's prompt. Gauges and session details come first;
 // when the terminal is wide enough, a GitHub-style contribution grid sits on
-// the right with a lifetime summary under the gauges (8 rows in all).
+// the right with a lifetime summary under the gauges (8 rows in all). A
+// warning row goes on top while a plan limit or the context window is nearly
+// full (alerts.js).
 //
 //   Context ━━━━╸─────── 27%   5-hour ━━━━━──── 34% resets 1h12m   Weekly …          Sep     Oct     Nov
 //   Opus 5.5 · medium   This session $3.20 · 1h05m   Today $12.10   ⎇ dev        ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ■
@@ -18,6 +20,7 @@ const path = require('path');
 const L = require('./lib');
 const G = require('./grid');
 const P = require('./page');
+const A = require('./alerts');
 const { paint } = L;
 
 const label = (s) => paint('gray', s);
@@ -142,6 +145,11 @@ function main() {
   if (cols && base.some((r) => L.visWidth(r) > cols)) base = [gaugesRow(input, cfg, now, true).join('  '), detailsRow(input, cfg, now).join('  ')];
   const lt = cfg.lifetime === false ? null : loadLifetime(now);
   rows.push(...(lt && cols ? withActivity(base, lt, cols, cfg, now) : base));
+  // A plan limit or the context window close to full: a warning on top, and
+  // a desktop notification the first time.
+  const over = A.crossings(input, cfg, now);
+  rows.unshift(A.warningRow(over, cfg, cols));
+  try { A.notifyNew(over, input, cfg, now); } catch {}
   // Claude Code trims leading spaces from each row, which slides a row with
   // nothing on the left over to the left edge. A braille blank looks like a
   // space but isn't trimmed.

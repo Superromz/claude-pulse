@@ -64,6 +64,10 @@ second, with no restart.
 | `plain` | `on`, `off` (default) | Plain text only: ASCII bars and symbols, for fonts that show boxes instead. |
 | `activity` | `on` (default), `off` | The lifetime summary and activity grid in the status line. |
 | `color-depth` | `auto` (default), `truecolor`, `256` | `auto` uses 256 colors in terminals that can't show exact shades, such as macOS Terminal. |
+| `alerts` | `on` (default), `off` | Warn when a plan limit or the context window passes its threshold. See [Alerts](#alerts). |
+| `desktop-alerts` | `on` (default), `off` | Also show each warning once as a desktop notification. |
+| `limit-alert` | `50` to `99` (default `80`) | How full (%) the 5-hour or weekly limit gets before the warning. |
+| `context-alert` | `50` to `99` (default `70`) | How full (%) the context window gets before the warning. |
 | `margin` | `0` to `40` (default `6`) | Columns kept free at the right of the status line, where Claude Code cuts it off. |
 
 Settings are saved in `~/.claude/pulse/config.json`.
@@ -74,6 +78,17 @@ The screenshot above shows it on a wide terminal (with demo numbers).
 
 The top row holds the three gauges that matter most. Each one turns yellow at 60% and red at 85%.
 On a wide terminal your activity grid sits on the right, with a lifetime summary under the gauges.
+
+### Alerts
+
+When the 5-hour or weekly limit passes 80%, or the context window passes 70%, a warning appears
+above the gauges, like `⚠ 5-hour limit 82% used (resets 1h12m)` or
+`⚠ Context 72% full: /compact soon frees room`. It stays while you're over the threshold.
+
+The first time each one happens you also get a desktop notification (Windows, macOS, and Linux with
+`notify-send`): once per limit window, and once per session for the context window, so it never
+nags. Change the thresholds or turn either part off with `/usage-pulse:settings` (`limit-alert`,
+`context-alert`, `desktop-alerts`, `alerts`).
 
 | Item | What it means |
 |---|---|
