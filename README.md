@@ -151,7 +151,8 @@ the activity grid to see that day's tokens and replies.
   and cost.
 - **Activity, last 14 days**: tokens and replies per day.
 - **Projects** and **Models**: where your usage went this week, and how much input came from the
-  cache.
+  cache. Each project also shows what it cost in the last 7 days and this month (a dash where no
+  cost was recorded, such as before Usage Pulse was installed).
 
 ## Where the numbers come from
 

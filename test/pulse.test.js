@@ -540,3 +540,36 @@ test('setup on Node older than 20 explains what to do and changes nothing', () =
   assert.ok(!fs.existsSync(path.join(home, '.claude', 'pulse', 'bin')));
   assert.match(run('pulse.js', ['setup'], '', { PULSE_NODE_VERSION: '20.0.0' }), /Usage Pulse is installed/);
 });
+
+test('dashboard: cost per project next to its tokens, a dash where none was recorded', () => {
+  const { home, run, js } = sandbox();
+  const dir = path.join(home, '.claude', 'projects', 'proj');
+  fs.mkdirSync(dir, { recursive: true });
+  const ts = new Date().toISOString();
+  const usage = { input_tokens: 10, output_tokens: 100, cache_read_input_tokens: 1000, cache_creation_input_tokens: 50 };
+  const line = (id, cwd) => JSON.stringify({ type: 'assistant', timestamp: ts, cwd, message: { id, model: 'claude-opus-5-5', usage } });
+  const shop = path.join(home, 'work', 'shop');
+  const blog = path.join(home, 'work', 'blog');
+  // A transcript counts toward the project it started in, so each project has its own.
+  fs.writeFileSync(path.join(dir, 'a.jsonl'), [line('m1', shop), line('m2', shop)].join('\n') + '\n');
+  fs.writeFileSync(path.join(dir, 'b.jsonl'), line('m3', blog) + '\n');
+  js('S.scan(); return null;');
+
+  // Cost recorded for shop, from a worktree of it: it still counts as shop.
+  const wt = path.join(shop, '.claude', 'worktrees', 'agent-1');
+  run('statusline.js', [], JSON.stringify(payload({ session_id: 's1', cwd: wt, workspace: { project_dir: wt, current_dir: wt }, cost: { total_cost_usd: 4.5 } })));
+  // An older session earlier this month counts toward the month, not the 7 days.
+  const d = new Date();
+  if (d.getDate() > 8) {
+    const early = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+    fs.writeFileSync(path.join(home, '.claude', 'pulse', 'sessions', 'old.json'), JSON.stringify({ sid: 'old', project: shop, days: { [early]: { spent: 10 } } }));
+  }
+  const month = d.getDate() > 8 ? '\\$14\\.50' : '\\$4\\.50';
+
+  const out = strip(run('dash.js'));
+  assert.match(out, / 7 days +month\n/);
+  assert.match(out, new RegExp(`^  shop .* replies +\\$4\\.50 +${month}$`, 'm'));
+  assert.match(out, /^ {2}blog .* replies +— +—$/m);
+  const projects = out.slice(out.indexOf('Projects, last 7 days'), out.indexOf('Models, last 7 days')).split('\n');
+  for (const row of projects) assert.ok([...row].length <= 100, row);
+});

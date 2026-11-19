@@ -191,7 +191,7 @@ function totals(usage, days) {
   return { all, models, projects };
 }
 
-module.exports = { USAGE_FILE, LIFETIME_FILE, scan, scanLocked, loadUsage, loadLifetime, lifetime, totals, modelName, listTranscripts };
+module.exports = { USAGE_FILE, LIFETIME_FILE, scan, scanLocked, loadUsage, loadLifetime, lifetime, totals, modelName, projectName, listTranscripts };
 
 if (require.main === module) {
   const quiet = process.argv.includes('--quiet');

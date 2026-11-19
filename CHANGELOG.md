@@ -6,6 +6,9 @@ All notable changes to Usage Pulse are listed here. The format follows
 
 ## Unreleased
 
+### Added
+- The dashboard's Projects section shows what each project cost in the last 7 days and this month.
+
 ## 0.2.0 - 2026-11-19
 
 ### Added
