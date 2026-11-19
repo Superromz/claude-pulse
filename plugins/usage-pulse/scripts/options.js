@@ -9,6 +9,11 @@ const onOff = {
   parse: (s) => (s === 'on' ? true : s === 'off' ? false : undefined),
 };
 
+const percent = {
+  values: ['50 to 99'],
+  parse: (s) => (/^\d+$/.test(s) && Number(s) >= 50 && Number(s) <= 99 ? Number(s) : undefined),
+};
+
 const OPTIONS = [
   {
     name: 'colors', key: 'palette', default: 'green', values: ['red', 'green', 'blue', 'purple'],
@@ -27,6 +32,22 @@ const OPTIONS = [
   {
     name: 'color-depth', key: 'color', default: 'auto', values: ['auto', 'truecolor', '256'],
     help: 'auto uses 256 colors in terminals that can\'t show exact shades, such as macOS Terminal.',
+  },
+  {
+    name: 'alerts', key: 'alerts', default: true, ...onOff,
+    help: 'Warn when a plan limit or the context window passes its threshold.',
+  },
+  {
+    name: 'desktop-alerts', key: 'desktopAlerts', default: true, ...onOff,
+    help: 'Also show each warning once as a desktop notification.',
+  },
+  {
+    name: 'limit-alert', key: 'limitAlert', default: 80, ...percent,
+    help: 'How full (%) the 5-hour or weekly limit gets before the warning.',
+  },
+  {
+    name: 'context-alert', key: 'contextAlert', default: 70, ...percent,
+    help: 'How full (%) the context window gets before the warning.',
   },
   {
     name: 'margin', key: 'margin', default: 6, values: ['0 to 40'],

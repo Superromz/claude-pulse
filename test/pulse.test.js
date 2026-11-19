@@ -14,7 +14,7 @@ const strip = (s) => s.replace(/\x1b\[[0-9;]*m/g, '').replace(/\x1b\]8;[^\x07]*\
 
 function sandbox() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'pulse-test-'));
-  const env = { ...process.env, HOME: home, USERPROFILE: home, APPDATA: home, PULSE_NO_CLIPBOARD: '1', NO_COLOR: '', COLUMNS: '' };
+  const env = { ...process.env, HOME: home, USERPROFILE: home, APPDATA: home, PULSE_NO_CLIPBOARD: '1', PULSE_NOTIFY_LOG: path.join(home, 'notifications.log'), NO_COLOR: '', COLUMNS: '' };
   const run = (file, args = [], input = '', extra = {}) => execFileSync(process.execPath, [path.join(SCRIPTS, file), ...args], { input, env: { ...env, ...extra }, encoding: 'utf8' });
   // Run lib/scan code inside the sandbox (they resolve HOME when they load).
   const js = (code) => JSON.parse(execFileSync(process.execPath, ['-e',
@@ -368,7 +368,7 @@ test('settings: one command lists every setting and changes any of them', () => 
   assert.match(run('pulse.js', ['colors', 'blue']), /The activity grid is now blue\./);
   assert.match(run('pulse.js', ['plain']), /Plain text is on/);
   assert.match(run('pulse.js', ['plain', 'off']), /Plain text is off/);
-  assert.deepStrictEqual(JSON.parse(fs.readFileSync(config, 'utf8')), { palette: 'blue', ascii: false, lifetime: false, color: 'auto', margin: 6 });
+  assert.deepStrictEqual(JSON.parse(fs.readFileSync(config, 'utf8')), { ...require(path.join(SCRIPTS, 'options.js')).DEFAULT_CONFIG, palette: 'blue', ascii: false, lifetime: false });
 });
 
 test('settings: a config.json written by an older version keeps working', () => {
@@ -379,4 +379,80 @@ test('settings: a config.json written by an older version keeps working', () => 
   assert.match(list, /^colors +purple /m);
   assert.match(list, /^activity +off /m);
   assert.match(list, /^margin +6 /m);
+});
+
+test('alerts: a warning on top and one desktop notification per crossing', () => {
+  const { home, run } = sandbox();
+  const log = path.join(home, 'notifications.log');
+  const sent = () => (fs.existsSync(log) ? fs.readFileSync(log, 'utf8').trim().split('\n').filter(Boolean).map(JSON.parse) : []);
+  const reset = Math.round(now() + 3600);
+  const hot = payload({ rate_limits: { five_hour: { used_percentage: 82, resets_at: reset }, seven_day: { used_percentage: 20, resets_at: now() + 5 * 86400 } } });
+  const line = (p, cols = '255') => strip(run('statusline.js', [], JSON.stringify(p), { COLUMNS: cols })).split('\n')[0];
+
+  // Below every threshold: no warning, nothing sent.
+  assert.match(line(payload()), /^Context /);
+  assert.strictEqual(sent().length, 0);
+
+  // Over the limit threshold: the warning leads, and the notification goes out once.
+  assert.match(line(hot), /^⚠ 5-hour limit 82% used \(resets (59m|1h00m)\)$/);
+  for (let i = 0; i < 3; i++) line(hot);
+  assert.strictEqual(sent().length, 1);
+  assert.match(sent()[0].body, /5-hour limit 82% used\. It resets in/);
+
+  // A new window (a different reset time) can alert again.
+  const next = payload({ rate_limits: { five_hour: { used_percentage: 85, resets_at: reset + 5 * 3600 } } });
+  line(next);
+  assert.strictEqual(sent().length, 2);
+
+  // The context window: once per session, with the fix in the wording.
+  const full = payload({ context_window: { total_input_tokens: 720000, context_window_size: 1000000, used_percentage: 72 } });
+  assert.match(line(full), /^⚠ Context 72% full: \/compact soon frees room$/);
+  line(full);
+  assert.strictEqual(sent().length, 3);
+  assert.match(sent()[2].body, /Run \/compact soon/);
+  line({ ...full, session_id: 'other' });
+  assert.strictEqual(sent().length, 4);
+
+  // Narrow terminals get shorter wording that fits, or no warning row at all.
+  assert.match(line(full, '48'), /^⚠ Context 72% full: \/compact soon$/);
+  assert.match(line(full, '30'), /^⚠ Context 72% full$/);
+  assert.match(line(full, '20'), /^Context /);
+  // Plain text mode stays ASCII.
+  run('pulse.js', ['plain', 'on']);
+  assert.match(line(hot), /^! 5-hour limit 82% used/);
+});
+
+test('alerts: thresholds and switches come from settings', () => {
+  const { home, run } = sandbox();
+  const log = path.join(home, 'notifications.log');
+  const count = () => (fs.existsSync(log) ? fs.readFileSync(log, 'utf8').trim().split('\n').filter(Boolean).length : 0);
+  const p = (pct, sid) => JSON.stringify(payload({ session_id: sid, context_window: { total_input_tokens: 1, context_window_size: 1000000, used_percentage: pct } }));
+  const first = (input) => strip(run('statusline.js', [], input)).split('\n')[0];
+
+  run('pulse.js', ['settings', 'context-alert', '90']);
+  assert.match(first(p(80, 'a')), /^Context /);
+  assert.match(first(p(91, 'a')), /^⚠ Context 91% full/);
+  assert.strictEqual(count(), 1);
+
+  // Desktop off: the warning stays, nothing is sent.
+  run('pulse.js', ['settings', 'desktop-alerts', 'off']);
+  assert.match(first(p(91, 'b')), /^⚠ Context/);
+  assert.strictEqual(count(), 1);
+
+  // Alerts off: neither.
+  run('pulse.js', ['settings', 'desktop-alerts', 'on']);
+  run('pulse.js', ['settings', 'alerts', 'off']);
+  assert.match(first(p(95, 'c')), /^Context /);
+  assert.strictEqual(count(), 1);
+
+  assert.match(run('pulse.js', ['settings', 'limit-alert', '30']), /Pick one of: 50 to 99/);
+});
+
+test('alerts: the status line still renders when notifications can\'t be shown', () => {
+  const { home, run } = sandbox();
+  const hot = JSON.stringify(payload({ rate_limits: { five_hour: { used_percentage: 90, resets_at: now() + 600 } } }));
+  // Sending throws (the log path is a folder), and the status line carries on.
+  const out = strip(run('statusline.js', [], hot, { PULSE_NOTIFY_LOG: home }));
+  assert.match(out, /^⚠ 5-hour limit 90% used/);
+  assert.match(out, /\nContext /);
 });
