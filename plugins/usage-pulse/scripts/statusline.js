@@ -80,7 +80,7 @@ function detailsRow(input, cfg, now) {
   }
 
   const dir = (input.workspace && input.workspace.current_dir) || input.cwd;
-  const branch = dir && L.gitBranch(dir);
+  const branch = cfg.branch !== false && dir && L.gitBranch(dir);
   if (branch) parts.push(paint('magenta', `${cfg.ascii ? 'branch' : '⎇'} ${branch}`));
   return parts;
 }
@@ -147,8 +147,13 @@ function main() {
   let base = columns([gaugesRow(input, cfg, now), detailsRow(input, cfg, now)]);
   // Too narrow: shorter wording, no column alignment.
   if (cols && base.some((r) => L.visWidth(r) > cols)) base = [gaugesRow(input, cfg, now, true).join('  '), detailsRow(input, cfg, now).join('  ')];
-  const lt = cfg.lifetime === false ? null : loadLifetime(now);
-  rows.push(...(lt && cols ? withActivity(base, lt, cols, cfg, now) : base));
+  // What to show beyond the two main rows: `activity` switches the grid and
+  // summary off together, `grid` and `summary` one at a time, and the compact
+  // layout keeps just the two main rows.
+  const extra = cfg.lifetime !== false && cfg.layout !== 'compact';
+  const show = { grid: extra && cfg.grid !== false, summary: extra && cfg.summary !== false };
+  const lt = show.grid || show.summary ? loadLifetime(now) : null;
+  rows.push(...(lt && cols ? withActivity(base, lt, cols, cfg, now, show) : base));
   // A plan limit or the context window close to full: a warning on top, and
   // a desktop notification the first time.
   const over = A.crossings(input, cfg, now);
@@ -164,12 +169,14 @@ function main() {
 // per weekday) to the two main rows, in whichever layout shows more weeks:
 //   beside: grid against the right edge of all 8 rows, summary under the gauges
 //   below:  the two main rows, then summary and grid side by side under them
-// On a terminal too narrow for either, just the two main rows.
-function withActivity(base, lt, cols, cfg, now) {
-  const sum = summary(lt);
+// On a terminal too narrow for either, just the two main rows. `show` turns
+// the grid or the summary off; the summary alone goes under the main rows.
+function withActivity(base, lt, cols, cfg, now, show = { grid: true, summary: true }) {
+  const sum = show.summary ? summary(lt) : ['', '', '', ''];
+  const sumW = Math.max(0, ...sum.map(L.visWidth));
+  if (!show.grid) return sumW + 1 <= cols ? [...base, ...sum] : base;
   const besideLefts = [base[0], base[1], '', ...sum, ''];
   const besideWeeks = G.weeksFor(cols - Math.max(...besideLefts.map(L.visWidth)) - 6);
-  const sumW = Math.max(...sum.map(L.visWidth));
   const belowWeeks = G.weeksFor(cols - sumW - 4);
   // Hovering an active square shows its day's usage (terminals that preview
   // links on hover show the link target, which is that text).

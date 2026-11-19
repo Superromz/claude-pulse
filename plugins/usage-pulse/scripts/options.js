@@ -38,7 +38,23 @@ const OPTIONS = [
   },
   {
     name: 'activity', key: 'lifetime', default: true, ...onOff,
-    help: 'Lifetime summary and activity grid in the status line.',
+    help: 'Lifetime summary and activity grid in the status line (off hides both).',
+  },
+  {
+    name: 'layout', key: 'layout', default: 'auto', values: ['auto', 'compact'],
+    help: 'auto fits as much as the terminal allows; compact keeps the status line to its two main rows.',
+  },
+  {
+    name: 'grid', key: 'grid', default: true, ...onOff,
+    help: 'The activity grid in the status line.',
+  },
+  {
+    name: 'summary', key: 'summary', default: true, ...onOff,
+    help: 'The lifetime summary (lifetime, past year, streak, busiest day) in the status line.',
+  },
+  {
+    name: 'branch', key: 'branch', default: true, ...onOff,
+    help: 'The git branch in the status line.',
   },
   {
     name: 'color-depth', key: 'color', default: 'auto', values: ['auto', 'truecolor', '256'],

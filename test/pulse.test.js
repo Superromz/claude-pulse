@@ -614,3 +614,38 @@ test('recap: last Monday-to-Sunday week against the week before', () => {
   assert.match(weekLine(100), /^ {2}Last week: 3k tokens · 3 replies · \$7\.25 · 2 active days \(\+200% vs the week before\)$/);
   assert.match(weekLine(70), /^ {2}Last week: 3k tokens · 3 replies · \$7\.25 · 2 active days$/);
 });
+
+test('layout: compact, grid, summary and branch settings choose what the status line shows', () => {
+  const { home, run } = sandbox();
+  writeLifetime(home);
+  // A project on a known branch.
+  const repo = path.join(home, 'shop');
+  fs.mkdirSync(path.join(repo, '.git'), { recursive: true });
+  fs.writeFileSync(path.join(repo, '.git', 'HEAD'), 'ref: refs/heads/dev\n');
+  const input = JSON.stringify(payload({ cwd: repo }));
+  const rows = (cols = '255') => strip(run('statusline.js', [], input, { COLUMNS: cols })).split('\n');
+  const set = (name, value) => run('pulse.js', ['settings', name, value]);
+
+  // Defaults: everything, as before.
+  assert.strictEqual(rows().length, 8);
+  assert.match(rows()[1], /⎇ dev/);
+
+  set('layout', 'compact');
+  for (const cols of ['255', '160', '100']) assert.strictEqual(rows(cols).length, 2, cols);
+  set('layout', 'auto');
+
+  set('summary', 'off');
+  assert.strictEqual(rows().length, 8);
+  assert.doesNotMatch(rows().join('\n'), /Lifetime|Streak/);
+  assert.match(rows().join('\n'), /Mon {2}■/);
+
+  set('summary', 'on');
+  set('grid', 'off');
+  assert.deepStrictEqual(rows().slice(2).map((r) => r.split(/ {2,}/)[0]), ['Lifetime', 'Past year', 'Streak', 'Busiest day Sep 25 · 920M tokens']);
+  assert.doesNotMatch(rows().join('\n'), /■/);
+
+  set('grid', 'on');
+  set('branch', 'off');
+  assert.doesNotMatch(rows()[1], /⎇/);
+  assert.strictEqual(rows().length, 8);
+});
