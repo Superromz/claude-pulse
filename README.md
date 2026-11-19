@@ -52,6 +52,7 @@ before, so `/usage-pulse:uninstall` can put it back.
 | `/usage-pulse:colors red` | Shortcut for the activity grid colors: `green` (default), `red`, `blue` or `purple`. |
 | `/usage-pulse:plain on` | Shortcut for plain text only (ASCII bars and symbols), for fonts that lack block and line characters. `off` turns it back. |
 | `/usage-pulse:doctor` | Something looks wrong? Checks Node, the status line setting, its scripts, Claude Code's history, plan limits, colors and symbols, and says how to fix anything that's off. It changes nothing. |
+| `/usage-pulse:export` | Save your daily usage to `~/.claude/pulse/exports/`: a CSV with one row per day (each kind of token, replies, cost) for spreadsheets, and a JSON file with the same days plus each project and model. |
 | `/usage-pulse:uninstall` | Put your previous status line and tips back. |
 
 ### Settings
@@ -172,6 +173,8 @@ the activity grid to see that day's tokens and replies.
   cost since midnight (spread evenly over the session).
 - Lifetime totals, activity, projects and models are read from Claude Code's history in `~/.claude/projects`, so
   they go back as far as that history does. Older days come from Claude Code's own stats. Only new lines are read after the first time.
+- `/usage-pulse:export` covers the days Usage Pulse has read from that history, which has the
+  breakdown by kind of token, project and model. Cost is left empty for days before it was recorded.
 
 Everything stays in `~/.claude/pulse/`. Nothing is sent anywhere.
 

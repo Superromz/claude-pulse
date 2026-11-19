@@ -700,3 +700,39 @@ test('doctor: each problem fails its own check with a fix, and it never changes 
   run('pulse.js', ['plain', 'on']);
   assert.match(run('pulse.js', ['doctor']), /^\[info\] Plain text is on: symbols are ASCII$/m);
 });
+
+test('export: one CSV row per day and a JSON breakdown, cost blank before it was tracked', () => {
+  const { home, run } = sandbox();
+  assert.match(run('pulse.js', ['export']), /Nothing to export yet/);
+
+  // Two days of history; cost recorded only on the second.
+  const dir = path.join(home, '.claude', 'projects', 'p');
+  fs.mkdirSync(dir, { recursive: true });
+  const usage = { input_tokens: 5, output_tokens: 100, cache_read_input_tokens: 1000, cache_creation_input_tokens: 20 };
+  const line = (id, day, cwd) => JSON.stringify({ type: 'assistant', timestamp: new Date(`${day}T12:00:00`).toISOString(), cwd, message: { id, model: 'claude-opus-5-5', usage } });
+  fs.writeFileSync(path.join(dir, 'a.jsonl'), [line('a', '2026-11-02', '/w/shop'), line('b', '2026-11-03', '/w/shop'), line('c', '2026-11-03', '/w/shop')].join('\n') + '\n');
+  fs.mkdirSync(path.join(home, '.claude', 'pulse', 'sessions'), { recursive: true });
+  fs.writeFileSync(path.join(home, '.claude', 'pulse', 'sessions', 's.json'), JSON.stringify({ sid: 's', project: '/w/shop', days: { '2026-11-03': { spent: 3.5 } } }));
+
+  const out = run('pulse.js', ['export']);
+  assert.match(out, /^Exported 2 days of usage \(from 2026-11-02\):$/m);
+  const files = fs.readdirSync(path.join(home, '.claude', 'pulse', 'exports'));
+  assert.deepStrictEqual(files.sort(), [`usage-${new Date().toLocaleDateString('en-CA')}.csv`, `usage-${new Date().toLocaleDateString('en-CA')}.json`]);
+
+  const csvFile = path.join(home, '.claude', 'pulse', 'exports', files.find((f) => f.endsWith('.csv')));
+  assert.strictEqual(fs.readFileSync(csvFile, 'utf8'), [
+    'date,input_tokens,output_tokens,cache_read_tokens,cache_write_tokens,total_tokens,replies,cost_usd',
+    '2026-11-02,5,100,1000,20,1125,1,',
+    '2026-11-03,10,200,2000,40,2250,2,3.50',
+    '',
+  ].join('\n'));
+
+  const json = JSON.parse(fs.readFileSync(csvFile.replace(/csv$/, 'json'), 'utf8'));
+  assert.strictEqual(json.days[1].projects.shop.replies, 2);
+  assert.strictEqual(json.days[1].models['Opus 5.5'].output, 200);
+  assert.strictEqual(json.days[0].cost, null);
+
+  // A second export the same day replaces the files instead of adding more.
+  run('pulse.js', ['export']);
+  assert.strictEqual(fs.readdirSync(path.join(home, '.claude', 'pulse', 'exports')).length, 2);
+});
