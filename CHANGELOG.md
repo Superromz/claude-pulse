@@ -11,6 +11,7 @@ All notable changes to Usage Pulse are listed here. The format follows
 - `/usage-pulse:recap` sums up last week (Monday to Sunday) against the week before: tokens, replies, cost, active days, busiest day, top project and model, and your streak. The dashboard shows the headline.
 - Choose what the status line shows: `layout compact` keeps it to two rows, and `grid`, `summary` and `branch` turn those parts off one at a time (all in `/usage-pulse:settings`).
 - `/usage-pulse:doctor` checks the usual reasons Usage Pulse looks wrong (an old Node, another tool's status line, outdated scripts, unreadable history, colors, symbols) and says how to fix each. It never changes anything.
+- `/usage-pulse:export` saves your daily usage as a CSV for spreadsheets (each kind of token, replies, cost) and a JSON file with each project and model, in `~/.claude/pulse/exports/`.
 
 ## 0.2.0 - 2026-11-19
 
