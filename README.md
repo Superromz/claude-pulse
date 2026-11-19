@@ -14,14 +14,14 @@ prompt, and gives you a usage dashboard one command away.
 You need Claude Code and Node.js 18 or newer. In Claude Code:
 
 ```
-/plugin marketplace add superromz/claude-pulse
+/plugin marketplace add superromz/usage-pulse
 /plugin install usage-pulse@usage-pulse
 /usage-pulse:setup
 ```
 
 To update later: `/plugin marketplace update usage-pulse`, then `/plugin update usage-pulse@usage-pulse`
 and restart Claude Code. What changed in each version is in [CHANGELOG.md](CHANGELOG.md) and on the
-[Releases](https://github.com/superromz/claude-pulse/releases) page.
+[Releases](https://github.com/superromz/usage-pulse/releases) page.
 
 ### Moving from claude-pulse
 
@@ -31,7 +31,7 @@ Usage Pulse used to be called Claude Pulse. If you installed it under that name,
 ```
 /plugin uninstall claude-pulse@claude-pulse
 /plugin marketplace remove claude-pulse
-/plugin marketplace add superromz/claude-pulse
+/plugin marketplace add superromz/usage-pulse
 /plugin install usage-pulse@usage-pulse
 /usage-pulse:setup
 ```
