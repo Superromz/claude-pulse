@@ -67,6 +67,12 @@ function installCommand() {
 }
 
 function setup() {
+  // PULSE_NODE_VERSION stands in for the real version in tests.
+  const version = process.env.PULSE_NODE_VERSION || process.versions.node;
+  if (Number(version.split('.')[0]) < 20) {
+    console.log(`Usage Pulse needs Node.js 20 or newer, and this computer has ${version}. Install the current version from https://nodejs.org, then run /usage-pulse:setup again. Nothing was changed.`);
+    return;
+  }
   installScripts();
   L.saveConfig(L.loadConfig());
 

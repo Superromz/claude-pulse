@@ -18,7 +18,9 @@ Keep the wording plain and friendly: no jargon, no game terms.
 
 ## Code
 
-- Releases: follow "Releasing" in `README.md`; every user-facing change lands under ` dependencies. Node 18+. Code lives in `plugins/usage-pulse/scripts/`.
+- Releases: follow "Releasing" in `README.md`; every user-facing change lands under
+  `## Unreleased` in `CHANGELOG.md` first.
+- Zero runtime dependencies. Node 20+. Code lives in `plugins/usage-pulse/scripts/`.
 - The status line runs every second: keep it fast (no spawning git, no rescanning history in the
   foreground) and never let it throw. Write to disk only when something changed.
 - Every status line row must fit inside `COLUMNS` minus the margin; Claude Code cuts the rest with "…".

@@ -9,11 +9,11 @@ prompt, and gives you a usage dashboard one command away.
 - **Live:** the numbers come straight from Claude Code every second.
 - **Plain words:** "Context 27%", "5-hour 34% resets 1h12m", "This session $3.20".
 - **Local and private:** everything stays in `~/.claude/pulse/`. Nothing is sent anywhere.
-- **Zero dependencies:** plain Node 18+, MIT licensed.
+- **Zero dependencies:** plain Node 20+, MIT licensed.
 
 ## Install
 
-You need Claude Code and Node.js 18 or newer. In Claude Code:
+You need Claude Code and Node.js 20 or newer. In Claude Code:
 
 ```
 /plugin marketplace add superromz/usage-pulse
@@ -167,7 +167,7 @@ Everything stays in `~/.claude/pulse/`. Nothing is sent anywhere.
 ## Where it works
 
 Usage Pulse is a Claude Code plugin, so it runs inside Claude Code: on Windows, macOS and Linux,
-with Node.js 18 or newer. It doesn't work in other AI command-line tools.
+with Node.js 20 or newer. It doesn't work in other AI command-line tools.
 
 - **Colors:** exact shades in Warp, Windows Terminal, iTerm2, Kitty, WezTerm, VS Code and most Linux
   terminals. Terminals that can't show them, such as macOS Terminal, automatically get the nearest
@@ -187,7 +187,7 @@ with Node.js 18 or newer. It doesn't work in other AI command-line tools.
 npm test
 ```
 
-Tests run on Windows, macOS and Linux with Node 18 and 24 on every push (`.github/workflows/test.yml`).
+Tests run on Windows, macOS and Linux with Node 20 and 24 on every push (`.github/workflows/test.yml`).
 
 The plugin lives in `plugins/usage-pulse/`: `statusline.js` (the status line), `dash.js` (the
 dashboard), `grid.js` (the activity grid), `page.js` (the activity page), `scan.js` (reads Claude
