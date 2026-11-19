@@ -63,7 +63,11 @@ second, with no restart.
 |---|---|---|
 | `colors` | `green` (default), `red`, `blue`, `purple` | Colors of the activity grid and the activity page. |
 | `plain` | `on`, `off` (default) | Plain text only: ASCII bars and symbols, for fonts that show boxes instead. |
-| `activity` | `on` (default), `off` | The lifetime summary and activity grid in the status line. |
+| `activity` | `on` (default), `off` | The lifetime summary and activity grid in the status line (`off` hides both). |
+| `layout` | `auto` (default), `compact` | `compact` keeps the status line to its two main rows at any width. |
+| `grid` | `on` (default), `off` | The activity grid on its own. |
+| `summary` | `on` (default), `off` | The lifetime summary (lifetime, past year, streak, busiest day) on its own. |
+| `branch` | `on` (default), `off` | The git branch. |
 | `color-depth` | `auto` (default), `truecolor`, `256` | `auto` uses 256 colors in terminals that can't show exact shades, such as macOS Terminal. |
 | `alerts` | `on` (default), `off` | Warn when a plan limit or the context window passes its threshold. See [Alerts](#alerts). |
 | `desktop-alerts` | `on` (default), `off` | Also show each warning once as a desktop notification. |
@@ -100,6 +104,9 @@ On a wide terminal your activity grid sits on the right, with a lifetime summary
 On a medium-width terminal the summary and grid move under the two main rows instead, side by
 side, so the full year still fits from about 165 columns. Narrower still, the grid shows fewer weeks,
 then steps aside (leaving two rows), and the wording gets shorter, so the rows never wrap. Anything Claude Code doesn't report (for example plan limits on an API key) is simply left out.
+
+Want less? `/usage-pulse:settings layout compact` keeps it to the two main rows, and `grid`, `summary`
+and `branch` turn those parts off one at a time. An alert still shows above the rows in any layout.
 
 ### Alerts
 
