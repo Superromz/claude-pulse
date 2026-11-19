@@ -68,6 +68,8 @@ second, with no restart.
 | `desktop-alerts` | `on` (default), `off` | Also show each warning once as a desktop notification. |
 | `limit-alert` | `50` to `99` (default `80`) | How full (%) the 5-hour or weekly limit gets before the warning. |
 | `context-alert` | `50` to `99` (default `70`) | How full (%) the context window gets before the warning. |
+| `budget-daily` | `off` (default) or an amount like `20` | Daily budget in dollars. See [Budgets](#budgets). |
+| `budget-monthly` | `off` (default) or an amount like `300` | Monthly budget in dollars, shown on the dashboard. |
 | `margin` | `0` to `40` (default `6`) | Columns kept free at the right of the status line, where Claude Code cuts it off. |
 
 Settings are saved in `~/.claude/pulse/config.json`.
@@ -78,6 +80,25 @@ The screenshot above shows it on a wide terminal (with demo numbers).
 
 The top row holds the three gauges that matter most. Each one turns yellow at 60% and red at 85%.
 On a wide terminal your activity grid sits on the right, with a lifetime summary under the gauges.
+
+| Item | What it means |
+|---|---|
+| Context | How full the conversation's context window is. |
+| 5-hour, Weekly | Your plan's usage windows (Pro and Max plans) and when each one resets. **↑ fast pace** means that at the current rate you'd reach the limit before it resets. |
+| Model · effort | The model answering and the effort level it uses. |
+| This session | What this session has cost, how long it has been open, and the lines added and removed. |
+| Today | What all your Claude Code sessions have cost today, and how much of your daily budget that is if you set one (see [Budgets](#budgets)). |
+| Cache | Claude Code keeps your conversation cached for a while after each message, which makes the next message faster and cheaper. "Warm 47m" is how long that lasts; "cold" means the next message rebuilds it. |
+| ⎇ | The git branch of the folder you're working in. |
+| Activity grid | Like the contribution graph on GitHub: a column per week, a row per weekday, a square per day. The brighter the square, the busier the day; dim squares are days off. It shows as many weeks as fit, up to a year. Pick its colors with `/usage-pulse:colors red` (or `green`, `blue`, `purple`). Hover an active day to see its usage, like `Thu, Nov 19 | 259M tokens | 565 replies` (in terminals that preview links on hover, such as Warp). |
+| Lifetime | Every token Claude has read and written for you. Mostly context re-read from the cache, so the number gets big fast. |
+| Past year | Tokens in the last 12 months and how many days you used Claude. |
+| Streak | Days in a row you've used Claude, and your best run. Today doesn't break it until it's over. |
+| Busiest day | The day you used the most tokens. |
+
+On a medium-width terminal the summary and grid move under the two main rows instead, side by
+side, so the full year still fits from about 165 columns. Narrower still, the grid shows fewer weeks,
+then steps aside (leaving two rows), and the wording gets shorter, so the rows never wrap. Anything Claude Code doesn't report (for example plan limits on an API key) is simply left out.
 
 ### Alerts
 
@@ -90,24 +111,24 @@ The first time each one happens you also get a desktop notification (Windows, ma
 nags. Change the thresholds or turn either part off with `/usage-pulse:settings` (`limit-alert`,
 `context-alert`, `desktop-alerts`, `alerts`).
 
-| Item | What it means |
-|---|---|
-| Context | How full the conversation's context window is. |
-| 5-hour, Weekly | Your plan's usage windows (Pro and Max plans) and when each one resets. **↑ fast pace** means that at the current rate you'd reach the limit before it resets. |
-| Model · effort | The model answering and the effort level it uses. |
-| This session | What this session has cost, how long it has been open, and the lines added and removed. |
-| Today | What all your Claude Code sessions have cost today. |
-| Cache | Claude Code keeps your conversation cached for a while after each message, which makes the next message faster and cheaper. "Warm 47m" is how long that lasts; "cold" means the next message rebuilds it. |
-| ⎇ | The git branch of the folder you're working in. |
-| Activity grid | Like the contribution graph on GitHub: a column per week, a row per weekday, a square per day. The brighter the square, the busier the day; dim squares are days off. It shows as many weeks as fit, up to a year. Pick its colors with `/usage-pulse:colors red` (or `green`, `blue`, `purple`). Hover an active day to see its usage, like `Thu, Nov 19 | 259M tokens | 565 replies` (in terminals that preview links on hover, such as Warp). |
-| Lifetime | Every token Claude has read and written for you. Mostly context re-read from the cache, so the number gets big fast. |
-| Past year | Tokens in the last 12 months and how many days you used Claude. |
-| Streak | Days in a row you've used Claude, and your best run. Today doesn't break it until it's over. |
-| Busiest day | The day you used the most tokens. |
+### Budgets
 
-On a medium-width terminal the summary and grid move under the two main rows instead, side by
-side, so the full year still fits from about 165 columns. Narrower still, the grid shows fewer weeks,
-then steps aside (leaving two rows), and the wording gets shorter, so the rows never wrap. Anything Claude Code doesn't report (for example plan limits on an API key) is simply left out.
+Set a daily budget, a monthly budget, or both, in dollars:
+
+```
+/usage-pulse:settings budget-daily 20
+/usage-pulse:settings budget-monthly 300
+```
+
+With a daily budget, "Today" in the status line shows how much of it is used (`Today $12.40 of $20.00`),
+turning yellow at 60% and red at 85% like the gauges. With a monthly budget, the dashboard's Spending
+section shows this month so far against it. `off` removes either one. Type plain numbers (`20`, not
+`$20`), since `$` means something else to the command line.
+
+The spending figure is Claude Code's own cost figure. With an API key it's what you pay; on Pro and
+Max plans it estimates what the same use would cost on the API, not what you're billed, so a budget
+there is a way to pace yourself rather than a bill. It only counts days since Usage Pulse was
+installed.
 
 ## Your activity page
 
@@ -123,7 +144,7 @@ and keeps it up to date (in Windows Terminal it splits the window for you; elsew
 the activity grid to see that day's tokens and replies.
 
 - **Plan limits**: both windows with reset times and whether you're on track.
-- **Spending**: today, yesterday, the last 7 and 30 days.
+- **Spending**: today, yesterday, the last 7 and 30 days, and this month against your monthly budget if you set one.
 - **Your activity**: the past year as a GitHub-style grid, in the colors you picked, with lifetime
   tokens, active days, your current and longest streak, and your busiest day.
 - **Open sessions**: every Claude Code window active in the last 10 minutes, with its context

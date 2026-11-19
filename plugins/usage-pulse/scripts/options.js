@@ -14,6 +14,17 @@ const percent = {
   parse: (s) => (/^\d+$/.test(s) && Number(s) >= 50 && Number(s) <= 99 ? Number(s) : undefined),
 };
 
+// A dollar amount like 20, 12.50 or $20; off (stored as 0) turns it off.
+const money = {
+  values: ['off', 'an amount like 20'],
+  show: (v) => (v > 0 ? '$' + (Number.isInteger(v) ? v : v.toFixed(2)) : 'off'),
+  parse: (s) => {
+    if (s === 'off' || s === '0') return 0;
+    const m = /^\$?(\d{1,6}(\.\d{1,2})?)$/.exec(s);
+    return m && Number(m[1]) > 0 ? Number(m[1]) : undefined;
+  },
+};
+
 const OPTIONS = [
   {
     name: 'colors', key: 'palette', default: 'green', values: ['red', 'green', 'blue', 'purple'],
@@ -48,6 +59,14 @@ const OPTIONS = [
   {
     name: 'context-alert', key: 'contextAlert', default: 70, ...percent,
     help: 'How full (%) the context window gets before the warning.',
+  },
+  {
+    name: 'budget-daily', key: 'budgetDaily', default: 0, ...money,
+    help: 'Daily budget in dollars: "Today" shows how much of it is used. Spending is Claude Code\'s own cost figure.',
+  },
+  {
+    name: 'budget-monthly', key: 'budgetMonthly', default: 0, ...money,
+    help: 'Monthly budget in dollars, shown against this month\'s spending on the dashboard.',
   },
   {
     name: 'margin', key: 'margin', default: 6, values: ['0 to 40'],
