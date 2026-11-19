@@ -53,6 +53,7 @@ before, so `/usage-pulse:uninstall` can put it back.
 | `/usage-pulse:plain on` | Shortcut for plain text only (ASCII bars and symbols), for fonts that lack block and line characters. `off` turns it back. |
 | `/usage-pulse:doctor` | Something looks wrong? Checks Node, the status line setting, its scripts, Claude Code's history, plan limits, colors and symbols, and says how to fix anything that's off. It changes nothing. |
 | `/usage-pulse:export` | Save your daily usage to `~/.claude/pulse/exports/`: a CSV with one row per day (each kind of token, replies, cost) for spreadsheets, and a JSON file with the same days plus each project and model. |
+| `/usage-pulse:share` | Make an image of your year of activity to post. See [Your activity page](#your-activity-page). |
 | `/usage-pulse:uninstall` | Put your previous status line and tips back. |
 
 ### Settings
@@ -145,6 +146,10 @@ installed.
 `/usage-pulse:activity` opens `~/.claude/pulse/activity.html` in your browser: the past year as a
 GitHub-style grid, with a tooltip on every day (tokens and replies). It updates every 10 minutes and
 never leaves your computer.
+
+To share it, `/usage-pulse:share` makes `~/.claude/pulse/activity-card.svg` and opens it: the same
+grid in your colors with your lifetime tokens, active days, streaks and busiest day. It leaves out
+cost and project names, and needs nothing from the internet to display. Post the file, or screenshot it.
 
 ## The dashboard
 

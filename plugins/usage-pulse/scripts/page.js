@@ -22,11 +22,13 @@ function dayHover(day, lt) {
   return parts.join(' | ').replace(/[^\x20-\x7e]/g, '');
 }
 
-// Open the page in the default browser.
-function openPage() {
+// Open the page (or another local file, like the share card) in the default
+// browser. PULSE_NO_OPEN skips it, for tests.
+function openPage(file = PAGE_FILE) {
+  if (process.env.PULSE_NO_OPEN) return;
   const { spawn } = require('child_process');
-  const [cmd, args] = process.platform === 'win32' ? ['cmd', ['/c', 'start', '""', PAGE_FILE]]
-    : process.platform === 'darwin' ? ['open', [PAGE_FILE]] : ['xdg-open', [PAGE_FILE]];
+  const [cmd, args] = process.platform === 'win32' ? ['cmd', ['/c', 'start', '""', file]]
+    : process.platform === 'darwin' ? ['open', [file]] : ['xdg-open', [file]];
   spawn(cmd, args, { detached: true, stdio: 'ignore', windowsHide: true }).unref();
 }
 
