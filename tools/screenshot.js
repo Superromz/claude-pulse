@@ -39,10 +39,15 @@ fs.writeFileSync(path.join(pulse, 'lifetime.json'), JSON.stringify({
 }));
 fs.writeFileSync(path.join(pulse, 'config.json'), JSON.stringify({ palette: 'red', color: 'truecolor' }));
 
+// A demo project on main, so the picture doesn't depend on the branch it's drawn from.
+const project = path.join(home, 'my-app');
+fs.mkdirSync(path.join(project, '.git'), { recursive: true });
+fs.writeFileSync(path.join(project, '.git', 'HEAD'), 'ref: refs/heads/main\n');
+
 const s = now / 1000;
 const input = {
   session_id: 'demo',
-  cwd: root,
+  cwd: project,
   model: { id: 'claude-opus-5-5', display_name: 'Opus 5.5' },
   effort: { level: 'high' },
   cost: { total_cost_usd: 3.2, total_duration_ms: 65 * 60000, total_lines_added: 120, total_lines_removed: 8 },

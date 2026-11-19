@@ -45,7 +45,8 @@ function gaugesRow(input, cfg, now, compact) {
     if (!w) continue;
     const reset = w.left != null ? label(` ${compact ? (cfg.ascii ? 'reset' : '↻') : 'resets'} ${L.fmtDur(w.left)}`) : '';
     const up = cfg.ascii ? '^' : '↑';
-    const pace = w.fast && w.used < 100 ? paint('yellow', compact ? ` ${up}` : ` ${up} fast pace`) : '';
+    // On a fast pace, when it would run out; narrow terminals keep just the arrow.
+    const pace = w.outAt ? paint('yellow', compact ? ` ${up}` : ` ${up} out by ${L.clockAt(w.outAt, now)}`) : '';
     parts.push(gaugeItem(name, w.used, cfg, reset + pace));
   }
   return parts;

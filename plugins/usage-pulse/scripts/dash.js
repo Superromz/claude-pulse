@@ -81,7 +81,7 @@ function render({ width = 100, now = Date.now(), hits = null } = {}) {
       const reset = w.left != null ? `resets in ${L.fmtDur(w.left)} (${key === 'five_hour' ? clockTime(now + w.left * 1000) : new Date(now + w.left * 1000).toDateString().slice(0, 10)})` : '';
       let pace = '';
       if (w.used >= 100) pace = paint('red', 'Limit reached');
-      else if (w.fast) pace = paint('yellow', `At this pace you'll run out before it resets`);
+      else if (w.outAt) pace = paint('yellow', `At this pace you'll run out by ${L.clockAt(w.outAt, now)}, before it resets`);
       else if (w.projected != null) pace = paint('green', 'On track');
       out.push(`  ${L.padVis(name, 13)} ${L.gauge(w.used / 100, barW, L.heat(w.used), cfg.ascii)} ${paint(L.heat(w.used), `${String(Math.round(w.used)).padStart(3)}%`)}  ${label(reset)}`);
       if (pace) out.push(`  ${' '.repeat(13)} ${pace}`);
