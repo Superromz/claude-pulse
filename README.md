@@ -204,9 +204,10 @@ the version changes, so every release bumps it.
 1. Move the lines under `## Unreleased` in `CHANGELOG.md` into a new `## x.y.z - YYYY-MM-DD` section.
 2. Set the same version in `plugins/usage-pulse/.claude-plugin/plugin.json`, the plugin entry in
    `.claude-plugin/marketplace.json` and `package.json` (a test fails if they disagree).
-3. Commit "Release x.y.z", merge it into `main` and push.
-4. On `main`, run `claude plugin tag --push` from the repository folder. It checks the manifests
-   and pushes the tag `usage-pulse--vx.y.z`.
+3. Commit "Release x.y.z" on a branch and open a pull request into `main`. `main` only accepts
+   pull requests whose tests all pass ("All tests passed"), so merge it once they do.
+4. Pull `main`, then run `claude plugin tag --push` from the repository folder. It checks the
+   manifests and pushes the tag `usage-pulse--vx.y.z`.
 
 The tag starts the Release workflow (`.github/workflows/release.yml`): it runs the tests, checks
 the tag matches `plugin.json` and publishes the GitHub Release with that version's changelog
