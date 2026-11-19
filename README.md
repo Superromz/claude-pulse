@@ -212,6 +212,11 @@ The tag starts the Release workflow (`.github/workflows/release.yml`): it runs t
 the tag matches `plugin.json` and publishes the GitHub Release with that version's changelog
 section as its notes.
 
+## Contributors
+
+- [Superromz](https://github.com/Superromz)
+- [Claude](https://claude.com/claude-code), Anthropic's AI, through Claude Code
+
 ## License
 
 MIT
