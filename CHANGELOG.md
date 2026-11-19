@@ -13,6 +13,7 @@ All notable changes to Usage Pulse are listed here. The format follows
 
 ### Changed
 - "↑ fast pace" on a plan limit now says when you'd run out at the current rate, like "↑ out by 4:10pm" (with the day for the weekly limit), in the status line and the dashboard.
+- Usage Pulse now needs Node.js 20 or newer (Node 18 no longer gets security updates). On an older Node, setup says so and changes nothing.
 
 ## 0.1.0 - 2026-11-19
 

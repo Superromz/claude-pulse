@@ -528,3 +528,15 @@ test('"out by" time: only on a fast pace, never after the reset', () => {
   assert.doesNotMatch(narrow, /out by/);
   for (const row of narrow.split('\n')) assert.ok([...row].length <= 84, row);
 });
+
+test('setup on Node older than 20 explains what to do and changes nothing', () => {
+  const { home, run } = sandbox();
+  const settings = path.join(home, '.claude', 'settings.json');
+  fs.mkdirSync(path.dirname(settings), { recursive: true });
+  fs.writeFileSync(settings, '{"statusLine":{"type":"command","command":"mine"}}');
+  const out = run('pulse.js', ['setup'], '', { PULSE_NODE_VERSION: '18.20.4' });
+  assert.match(out, /needs Node\.js 20 or newer, and this computer has 18\.20\.4/);
+  assert.strictEqual(fs.readFileSync(settings, 'utf8'), '{"statusLine":{"type":"command","command":"mine"}}');
+  assert.ok(!fs.existsSync(path.join(home, '.claude', 'pulse', 'bin')));
+  assert.match(run('pulse.js', ['setup'], '', { PULSE_NODE_VERSION: '20.0.0' }), /Usage Pulse is installed/);
+});
