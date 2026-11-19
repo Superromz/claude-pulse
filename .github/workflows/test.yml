@@ -19,3 +19,13 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - run: npm test
+
+  # One check for branch protection to require, so changing the matrix above
+  # never needs the protection settings touched.
+  all-tests:
+    name: All tests passed
+    if: always()
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - run: test "${{ needs.test.result }}" = success

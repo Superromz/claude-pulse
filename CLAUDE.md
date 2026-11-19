@@ -32,3 +32,4 @@ Keep the wording plain and friendly: no jargon, no game terms.
 
 - Short messages describing what changed for users.
 - No Claude attribution trailers.
+- `main` only accepts pull requests whose tests pass ("All tests passed"): work on a branch.
