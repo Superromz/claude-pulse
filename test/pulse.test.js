@@ -14,7 +14,7 @@ const strip = (s) => s.replace(/\x1b\[[0-9;]*m/g, '').replace(/\x1b\]8;[^\x07]*\
 
 function sandbox() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'pulse-test-'));
-  const env = { ...process.env, HOME: home, USERPROFILE: home, APPDATA: home, PULSE_NO_CLIPBOARD: '1', PULSE_NOTIFY_LOG: path.join(home, 'notifications.log'), NO_COLOR: '', COLUMNS: '' };
+  const env = { ...process.env, HOME: home, USERPROFILE: home, APPDATA: home, PULSE_NO_CLIPBOARD: '1', PULSE_NO_OPEN: '1', PULSE_NOTIFY_LOG: path.join(home, 'notifications.log'), NO_COLOR: '', COLUMNS: '' };
   const run = (file, args = [], input = '', extra = {}) => execFileSync(process.execPath, [path.join(SCRIPTS, file), ...args], { input, env: { ...env, ...extra }, encoding: 'utf8' });
   // Run lib/scan code inside the sandbox (they resolve HOME when they load).
   const js = (code) => JSON.parse(execFileSync(process.execPath, ['-e',
@@ -735,4 +735,38 @@ test('export: one CSV row per day and a JSON breakdown, cost blank before it was
   // A second export the same day replaces the files instead of adding more.
   run('pulse.js', ['export']);
   assert.strictEqual(fs.readdirSync(path.join(home, '.claude', 'pulse', 'exports')).length, 2);
+});
+
+test('share: a self-contained SVG card with no cost or project names, colored like the activity page', () => {
+  const { home, run, js } = sandbox();
+  assert.match(run('pulse.js', ['share']), /No activity yet/);
+
+  // History in a project with a telling name, and a recorded cost.
+  const dir = path.join(home, '.claude', 'projects', 'p');
+  fs.mkdirSync(dir, { recursive: true });
+  const usage = { input_tokens: 5, output_tokens: 100, cache_read_input_tokens: 1000, cache_creation_input_tokens: 20 };
+  const day = (n) => new Date(Date.now() - n * 86400000).toISOString();
+  fs.writeFileSync(path.join(dir, 'a.jsonl'), [0, 1, 1, 3, 9, 9, 9].map((n, i) => JSON.stringify({ type: 'assistant', timestamp: day(n), cwd: '/w/secret-client-project', message: { id: `m${i}`, model: 'claude-opus-5-5', usage } })).join('\n') + '\n');
+  run('statusline.js', [], JSON.stringify(payload({ cost: { total_cost_usd: 42.17 } })));
+  run('pulse.js', ['colors', 'purple']);
+
+  assert.match(run('pulse.js', ['share']), /^Opened your activity card: .*activity-card\.svg$/m);
+  const svg = fs.readFileSync(path.join(home, '.claude', 'pulse', 'activity-card.svg'), 'utf8');
+  assert.match(svg, /^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" /);
+  assert.match(svg, /<\/svg>\n$/);
+  // Nothing loaded from elsewhere: no links, images, scripts, styles or fonts.
+  assert.doesNotMatch(svg.replace('xmlns="http://www.w3.org/2000/svg"', ''), /https?:|href|<image|<script|<style|@import|url\(/i);
+  // Nothing private.
+  assert.doesNotMatch(svg, /secret-client-project|42\.17|\$/);
+  assert.match(svg, />My year with Claude</);
+
+  // Same days, same colors as the activity page.
+  js('S.scan(); return null;');
+  run('pulse.js', ['activity']);
+  const page = fs.readFileSync(path.join(home, '.claude', 'pulse', 'activity.html'), 'utf8');
+  const colors = (text, re) => Object.fromEntries([...text.matchAll(re)].map((m) => [m[1], m[2]]));
+  const onPage = colors(page, /id="d(\d{4}-\d\d-\d\d)" style="[^"]*background:(rgb\([^)]*\))/g);
+  const onCard = colors(svg, /id="d(\d{4}-\d\d-\d\d)"[^>]* fill="(rgb\([^)]*\))"/g);
+  assert.ok(Object.keys(onCard).length >= 365, String(Object.keys(onCard).length));
+  assert.deepStrictEqual(onCard, onPage);
 });
