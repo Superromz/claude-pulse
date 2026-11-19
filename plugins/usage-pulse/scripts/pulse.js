@@ -4,6 +4,7 @@
 //   pulse.js uninstall        restore the settings that setup replaced
 //   pulse.js dashboard        print the usage dashboard
 //   pulse.js recap            last week at a glance, compared with the week before
+//   pulse.js doctor           check the usual reasons it looks wrong, and say how to fix each
 //   pulse.js live             open the live dashboard (split pane where the terminal allows it)
 //   pulse.js settings [name] [value]  list every setting, or change one
 //   pulse.js colors <name>    colors of the activity grid (green, red, blue, purple)
@@ -121,6 +122,12 @@ function recap() {
   console.log(R.formatRecap(R.weekRecap()));
 }
 
+// Only reads: no setup, no scan, no saved settings.
+function doctor() {
+  const D = require('./doctor');
+  console.log(D.format(D.checks()));
+}
+
 // Open the live dashboard next to Claude. Windows Terminal can split itself;
 // other terminals get the command on the clipboard.
 function live() {
@@ -188,5 +195,5 @@ function activity() {
 const plain = (arg) => settings('plain', arg === 'on' || arg === 'off' ? arg : (L.loadConfig().ascii ? 'off' : 'on'));
 
 const [cmd, arg, value] = process.argv.slice(2);
-const commands = { setup, uninstall, dashboard, recap, live, activity, plain: () => plain(arg), colors: () => colors(arg), settings: () => settings(arg, value) };
-(commands[cmd] || (() => console.log('Usage: pulse.js setup|uninstall|dashboard|recap|live|activity|settings [name] [value]|plain <on|off>|colors <name>')))();
+const commands = { setup, uninstall, dashboard, recap, doctor, live, activity, plain: () => plain(arg), colors: () => colors(arg), settings: () => settings(arg, value) };
+(commands[cmd] || (() => console.log('Usage: pulse.js setup|uninstall|dashboard|recap|doctor|live|activity|settings [name] [value]|plain <on|off>|colors <name>')))();
