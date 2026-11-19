@@ -3,6 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "description": "A Claude Code plugin that shows your Claude usage in the status line and a dashboard.",
+  "contributors": [
+    {
+      "name": "Superromz",
+      "url": "https://github.com/Superromz"
+    },
+    {
+      "name": "Claude",
+      "url": "https://claude.com/claude-code"
+    }
+  ],
   "scripts": {
     "test": "node --test"
   },
