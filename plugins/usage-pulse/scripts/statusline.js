@@ -65,8 +65,11 @@ function detailsRow(input, cfg, now) {
     parts.push(`${label('This session')} ${bits.join(label(' · '))}`);
   }
 
+  // With a daily budget, how much of it today has used, colored like the gauges.
   const today = L.spentOn(L.loadSessions(2), L.dayKey(now));
-  if (today > 0) parts.push(`${label('Today')} ${paint('white', L.fmtUsd(today))}`);
+  const budget = cfg.budgetDaily;
+  if (budget > 0) parts.push(`${label('Today')} ${paint(L.heat((today / budget) * 100), L.fmtUsd(today))} ${label(`of ${L.fmtUsd(budget)}`)}`);
+  else if (today > 0) parts.push(`${label('Today')} ${paint('white', L.fmtUsd(today))}`);
 
   // A warm prompt cache makes the next message cheaper and faster.
   const pc = input.prompt_cache;

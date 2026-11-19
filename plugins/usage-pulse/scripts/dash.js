@@ -95,7 +95,23 @@ function render({ width = 100, now = Date.now(), hits = null } = {}) {
   const sum = (days) => days.reduce((s, d) => s + L.spentOn(sessions, d), 0);
   const tracked = sessions.flatMap((s) => Object.keys(s.days || {})).sort()[0];
   const cell = (name, v) => `${label(name)} ${paint('bold', L.fmtUsd(v))}`;
-  out.push(`  ${[cell('Today', sum([today])), cell('Yesterday', sum([L.dayKey(now - 86400000)])), cell('Last 7 days', sum(L.lastDays(7, now))), cell('Last 30 days', sum(L.lastDays(30, now)))].join('    ')}`);
+  const todayCell = cfg.budgetDaily > 0
+    ? `${label('Today')} ${paint('bold', paint(L.heat((sum([today]) / cfg.budgetDaily) * 100), L.fmtUsd(sum([today]))))} ${label(`of ${L.fmtUsd(cfg.budgetDaily)}`)}`
+    : cell('Today', sum([today]));
+  out.push(`  ${[todayCell, cell('Yesterday', sum([L.dayKey(now - 86400000)])), cell('Last 7 days', sum(L.lastDays(7, now))), cell('Last 30 days', sum(L.lastDays(30, now)))].join('    ')}`);
+  // Month to date against the monthly budget, like a plan limit.
+  if (cfg.budgetMonthly > 0) {
+    const month = sum(L.lastDays(new Date(now).getDate(), now));
+    const pct = (month / cfg.budgetMonthly) * 100;
+    const barW = Math.max(16, Math.min(40, width - 70));
+    out.push(`  ${L.padVis(label('This month'), 13)} ${L.gauge(pct / 100, barW, L.heat(pct), cfg.ascii)} ${paint(L.heat(pct), `${String(Math.round(pct)).padStart(3)}%`)}  ${paint('bold', L.fmtUsd(month))} ${label(`of ${L.fmtUsd(cfg.budgetMonthly)} monthly budget`)}`);
+    // Recent sessions only go back 35 days, so when they start after the 1st,
+    // look at every session to tell "tracking started this month" from "no
+    // use earlier this month".
+    const monthStart = L.dayKey(new Date(new Date(now).getFullYear(), new Date(now).getMonth(), 1).getTime());
+    const started = tracked && tracked > monthStart && L.loadSessions(36500).flatMap((s) => Object.keys(s.days || {})).sort()[0];
+    if (started && started > monthStart) out.push(`  ${label(`Only counts from ${started}, when tracking started; earlier days this month aren't included.`)}`);
+  }
   out.push(`  ${label(tracked ? `Cost as Claude Code reports it. Tracked since ${tracked}.` : 'Cost is tracked from now on, as Claude Code reports it.')}`);
 
   // ---- year grid ----

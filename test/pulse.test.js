@@ -456,3 +456,38 @@ test('alerts: the status line still renders when notifications can\'t be shown',
   assert.match(out, /^⚠ 5-hour limit 90% used/);
   assert.match(out, /\nContext /);
 });
+
+test('budgets: "Today" against the daily budget, month to date on the dashboard', () => {
+  const { home, run } = sandbox();
+  const row = (cost) => run('statusline.js', [], JSON.stringify(payload({ cost: { total_cost_usd: cost, total_duration_ms: 60000 } })), { COLUMNS: '255' }).split('\n')[1];
+
+  // No budget: unchanged.
+  assert.match(strip(row(1.5)), /Today \$1\.50 {2,}/);
+  assert.doesNotMatch(strip(row(1.5)), / of \$/);
+
+  run('pulse.js', ['settings', 'budget-daily', '20']);
+  assert.match(strip(row(1.5)), /Today \$1\.50 of \$20\.00/);
+  // Colored like the gauges: green, then yellow from 60%, red from 85%.
+  assert.match(row(1.5), /\x1b\[32m\$1\.50/);
+  assert.match(row(13), /\x1b\[33m\$13\.00/);
+  assert.match(row(18), /\x1b\[31m\$18\.00/);
+
+  run('pulse.js', ['settings', 'budget-monthly', '300']);
+  const dash = strip(run('dash.js'));
+  assert.match(dash, /Today \$18\.00 of \$20\.00/);
+  assert.match(dash, /This month .* 6% {2}\$18\.00 of \$300\.00 monthly budget/);
+  // Tracking started today, so earlier days this month aren't counted (unless today is the 1st).
+  if (new Date().getDate() > 1) assert.match(dash, /Only counts from \d{4}-\d\d-\d\d/);
+  // A session from long ago means tracking started before this month: no note,
+  // even though no recent session goes back to the 1st.
+  const old = path.join(home, '.claude', 'pulse', 'sessions', 'old.json');
+  fs.writeFileSync(old, JSON.stringify({ sid: 'old', days: { '2020-01-01': { spent: 5 } } }));
+  fs.utimesSync(old, new Date('2020-01-02'), new Date('2020-01-02'));
+  assert.doesNotMatch(strip(run('dash.js')), /Only counts from/);
+
+  // Turned off again: back to how it was.
+  run('pulse.js', ['settings', 'budget-daily', 'off']);
+  run('pulse.js', ['settings', 'budget-monthly', 'off']);
+  assert.doesNotMatch(strip(run('dash.js')), /This month|monthly budget/);
+  assert.match(run('pulse.js', ['settings', 'budget-daily', 'lots']), /Pick one of: off, an amount like 20/);
+});
