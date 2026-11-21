@@ -9,7 +9,7 @@
       "name": "usage-pulse",
       "source": "./plugins/usage-pulse",
       "description": "See your Claude usage at a glance: context window, 5-hour and weekly plan limits, session cost and a GitHub-style activity grid in the status line, plus a usage dashboard.",
-      "version": "0.2.0"
+      "version": "0.3.0"
     }
   ]
 }
