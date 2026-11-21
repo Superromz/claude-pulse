@@ -6,6 +6,8 @@ All notable changes to Usage Pulse are listed here. The format follows
 
 ## Unreleased
 
+## 0.3.0 - 2026-11-21
+
 ### Added
 - The dashboard's Projects section shows what each project cost in the last 7 days and this month.
 - `/usage-pulse:recap` sums up last week (Monday to Sunday) against the week before: tokens, replies, cost, active days, busiest day, top project and model, and your streak. The dashboard shows the headline.
